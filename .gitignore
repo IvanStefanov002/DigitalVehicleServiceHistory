@@ -1,0 +1,46 @@
+# Built application files
+*.apk
+*.aar
+*.ap_
+*.aab
+
+# Files for the ART/Dalvik VM
+*.dex
+
+# Java class files
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+build/
+app/build/
+/build
+/captures
+.externalNativeBuild/
+.cxx/
+
+# Gradle files
+.gradle/
+# note: gradlew, gradlew.bat, and gradle/wrapper/ SHOULD be tracked
+
+# Local configuration file (contains SDK path, machine-specific)
+local.properties
+
+# Log Files
+*.log
+*.apk.log
+
+# Android Studio / IntelliJ
+*.iml
+.idea/*
+!.idea/copyright/
+.DS_Store
+
+# Keystore files (never commit these — sensitive)
+*.jks
+*.keystore
+
+# Google Services (if it contains sensitive API keys/config)
+google-services.json
