@@ -20,6 +20,7 @@ There is no separate lint/format step configured beyond Android's default `lint`
 - Single Gradle module: `:app`. Language is **Java** (not Kotlin), UI is classic **Android Views with XML layouts** (no Compose, no fragments).
 - Build config: Gradle Kotlin DSL (`.gradle.kts`) with a version catalog at `gradle/libs.versions.toml`. Add/upgrade dependencies there, not by hardcoding versions — note `okhttp` is currently hardcoded in `app/build.gradle.kts` as an exception.
 - `compileSdk`/`targetSdk` 36, `minSdk` 24, Java 11. Package/namespace: `com.example.maintenanceapp`.
+- **The app is called „Автодосие“** (`app_name`, used as the launcher label *and* the wordmark on the login screen). The Gradle `rootProject.name` is the Latin `Avtodosie` on purpose, so build artefacts keep ASCII filenames. The directory, the namespace and the `Theme.MaintenanceApp` style names still say MaintenanceApp — cosmetic, but note **`com.example.*` is rejected by Google Play**, so the `applicationId` has to change before any release; doing it after there are installs makes it a new app rather than an upgrade (and it touches the `${applicationId}.fileprovider` authority).
 
 ## Architecture
 

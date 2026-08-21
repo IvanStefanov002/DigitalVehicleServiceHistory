@@ -1,5 +1,8 @@
 <resources>
-    <string name="app_name">MaintenanceApp</string>
+    <!-- Launcher label and the wordmark on the login screen. „Досие“ = the dossier: the service
+         record and the papers together, for a vehicle of any type — which is what the app keeps.
+         Note the Gradle project is the Latin "Avtodosie" so build artefacts get ASCII filenames. -->
+    <string name="app_name">Автодосие</string>
 
     <!-- Bottom navigation -->
     <string name="nav_vehicles">Автопарк</string>
