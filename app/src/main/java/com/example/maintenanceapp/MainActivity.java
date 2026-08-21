@@ -171,8 +171,9 @@ public class MainActivity extends AppCompatActivity {
 
         BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
 
-        // Insets
-        ScreenInsets.apply(findViewById(R.id.main));
+        // Insets — the bottom nav owns the navigation-bar inset itself, or the whole bar would be
+        // lifted off the bottom edge (very visible with three-button navigation).
+        ScreenInsets.applyWithBottomBar(findViewById(R.id.main));
 
         // Hide status bar
 //        WindowInsetsControllerCompat controller =

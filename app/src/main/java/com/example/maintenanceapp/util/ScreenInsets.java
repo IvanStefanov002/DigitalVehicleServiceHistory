@@ -58,6 +58,38 @@ public final class ScreenInsets {
     }
 
     /**
+     * Variant for a screen whose bottom bar is pinned to the window edge (currently only
+     * {@code MainActivity}'s {@code BottomNavigationView}).
+     *
+     * <p>{@link #apply(View)} pads the <em>root</em> by the navigation-bar inset, which lifts the
+     * whole bar off the bottom edge and leaves a band of bare window colour under it — barely
+     * visible with gesture navigation (a ~16dp inset), obviously wrong with the classic
+     * three-button bar (~48dp). And it is pure duplication: Material's {@code NavigationBarView}
+     * already adds the bottom system-bar inset to its own padding, so its background extends behind
+     * the navigation bar while its items stay above it. Hence no bottom padding here at all — do
+     * not "fix" this by padding the bar by hand either, since Material recomputes that padding from
+     * the value captured at construction and would overwrite it.
+     *
+     * <p>The keyboard is still handled on the root: the field being typed into lives in the content
+     * area, not in the bar.
+     */
+    public static void applyWithBottomBar(View root) {
+        ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
+            Insets bars = insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+
+            v.setPadding(bars.left, bars.top, bars.right, ime.bottom);
+
+            if (insets.isVisible(WindowInsetsCompat.Type.ime())) {
+                scrollFocusedFieldIntoView(v);
+            }
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(root);
+    }
+
+    /**
      * Brings the focused input back above the keyboard.
      *
      * <p>Shrinking the container is not enough on its own: the field can already be scrolled past
