@@ -44,3 +44,9 @@ local.properties
 
 # Google Services (if it contains sensitive API keys/config)
 google-services.json
+
+# Release signing. The keystore IS the app's identity — back both up somewhere safe, but never
+# commit them: anyone with these can ship an "update" that installs over the real app.
+*.jks
+*.keystore
+keystore.properties

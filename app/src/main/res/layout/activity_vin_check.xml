@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- In-app assisted ГТП check. Hosts RTA's public vin-check page in a WebView so the user solves the
+     reCAPTCHA themselves (a human, as RTA intends — the app never forges a token), and the app then
+     reads the inspection date off RTA's own rendered result and offers it back for confirmation.
+
+     #vcRoot receives the window-inset padding in onCreate. Not a SwipeRefreshLayout: a pull would
+     fight scrolling inside the WebView, and there is nothing of ours to refresh here. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/vcRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="?attr/colorSurface">
+
+    <!-- Header: back + title + open-in-browser fallback (for the case where reCAPTCHA refuses to
+         run inside a WebView, which Google sometimes enforces). -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp">
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_arrow_back"
+            app:tint="?attr/colorOnSurface"
+            android:contentDescription="@string/back" />
+
+        <TextView
+            android:id="@+id/vcTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="@string/vc_title"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <ImageButton
+            android:id="@+id/btnReload"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_refresh"
+            app:tint="?attr/colorOnSurface"
+            android:contentDescription="@string/vc_reload" />
+
+        <ImageButton
+            android:id="@+id/btnOpenBrowser"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_open_in_new"
+            app:tint="?attr/colorOnSurface"
+            android:contentDescription="@string/vc_open_browser" />
+    </LinearLayout>
+
+    <!-- Hint strip: tells the user their VIN is on the clipboard and what to do. -->
+    <TextView
+        android:id="@+id/vcHint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="10dp"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="13sp"
+        android:lineSpacingExtra="2dp"
+        android:text="@string/vc_hint" />
+
+    <ProgressBar
+        android:id="@+id/vcProgress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:indeterminate="false"
+        android:visibility="gone" />
+
+    <WebView
+        android:id="@+id/vcWeb"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Load-failure bar. Without it a page that never renders is just a blank WebView with no way
+         out but Back — which is exactly how the Guarantee Fund's intermittent failures presented.
+         Raised by onReceivedError on the main frame and by the load watchdog. -->
+    <LinearLayout
+        android:id="@+id/vcErrorBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="?attr/colorSurfaceVariant"
+        android:padding="12dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/vcErrorText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="14sp"
+            android:text="@string/vc_load_failed" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp"
+            android:gravity="end">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/vcBtnReload"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/vc_reload" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/vcBtnBrowser"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                app:icon="@drawable/ic_open_in_new"
+                app:iconSize="18dp"
+                android:text="@string/vc_open_browser" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Result bar: appears when the app detects a date in RTA's rendered result. Nothing is ever
+         saved silently — the user taps to confirm, and can compare it against what's on screen. -->
+    <LinearLayout
+        android:id="@+id/vcResultBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="?attr/colorSurfaceVariant"
+        android:padding="12dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/vcResultText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="14sp"
+            android:text="@string/vc_result_found" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/vcBtnUse"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:icon="@drawable/ic_check"
+            app:iconSize="18dp"
+            android:text="@string/vc_use_date" />
+    </LinearLayout>
+</LinearLayout>

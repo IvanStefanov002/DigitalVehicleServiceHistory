@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Per-vehicle document validity: vignette, ГТП, ГО.
+
+     #cmpRoot is the SwipeRefreshLayout rather than the ScrollView, for the same reason as
+     activity_vehicle_detail: the window-inset padding then lands on the outer view and keeps the
+     refresh spinner clear of the status bar. Pull-to-refresh re-runs the vignette check.
+
+     This screen carries a refresh even though the two declared dates are edited here — the CLAUDE.md
+     "forms are not wrapped" rule is about a pull fighting a text field, and there are none: the
+     dates are set through a date-picker dialog.
+
+     The three cards are static includes of one layout, in fixed order, the way the spec rows on the
+     detail screen are. Each card's inner ids resolve against the card, not the screen. -->
+<androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cmpRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
+
+    <ScrollView
+        android:id="@+id/cmpScroll"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/colorSurface"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageButton
+                    android:id="@+id/btnBack"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_arrow_back"
+                    app:tint="?attr/colorOnSurface"
+                    android:contentDescription="@string/back" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/cmp_title"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/cmpVehicle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textSize="13sp"
+                        android:text="Make Model — CA1234AB" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <include layout="@layout/item_compliance_card" android:id="@+id/cardVignette" />
+            <include layout="@layout/item_compliance_card" android:id="@+id/cardInspection" />
+            <include layout="@layout/item_compliance_card" android:id="@+id/cardInsurance" />
+
+            <!-- Explains why one card is authoritative and two are not. Without this the mix of
+                 verified and self-reported data on one screen is quietly misleading. -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="8dp"
+                android:text="@string/cmp_footnote"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="12sp"
+                android:lineSpacingExtra="3dp" />
+        </LinearLayout>
+    </ScrollView>
+</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
