@@ -99,6 +99,15 @@
         <item name="cornerSize">24dp</item>
     </style>
 
+    <!-- Circular crop for the profile avatar (ShapeableImageView). Needed since the placeholder
+         became a photo: the old vector glyph was transparent outside its circle, so an unclipped
+         ImageView looked round by accident. A real photo does not, and centerCrop would have drawn
+         a square over the circular background. -->
+    <style name="ShapeAppearanceOverlay.Avatar" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
     <!-- Small all-caps label above a value (service-type card, spec blocks). -->
     <style name="Label.Overline" parent="">
         <item name="android:layout_width">wrap_content</item>

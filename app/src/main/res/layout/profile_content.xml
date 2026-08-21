@@ -23,19 +23,21 @@
         android:orientation="vertical"
         android:gravity="center_horizontal">
 
-        <!-- User profile image -->
-        <ImageView
+        <!-- User profile image. avatar_placeholder is the default the server's absence falls back
+             to; MainActivity.showProfile replaces it with the decoded profileImageBase64 when there
+             is one. ShapeableImageView (not a plain ImageView) so both the placeholder and a real
+             photo are clipped to the circle — and no android:tint here, for the same reason as the
+             vehicle placeholders: it would recolour the photo that replaces it. -->
+        <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/imgProfile"
             android:layout_width="120dp"
             android:layout_height="120dp"
-            android:src="@drawable/ic_avatar_placeholder"
+            android:src="@drawable/avatar_placeholder"
             android:scaleType="centerCrop"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="16dp"
-            android:background="@drawable/circle_background"
-            android:backgroundTint="?attr/colorSurfaceContainerHighest"
             android:contentDescription="@null"
-            android:padding="4dp" />
+            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Avatar" />
 
         <!-- User info -->
         <TextView
