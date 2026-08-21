@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MaintenanceApp"
+rootProject.name = "Avtodosie"   // ASCII on purpose: this names build outputs. UI label is @string/app_name („Автодосие“).
 include(":app")

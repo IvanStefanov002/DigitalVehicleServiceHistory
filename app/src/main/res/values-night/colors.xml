@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  DARK color scheme — the navy + cyan "instrument cluster" look.
+
+  Mirrors every name in values/colors.xml. themes.xml maps the Material 3 roles to these names
+  once, so switching the device between light and dark re-skins the whole app with no code change.
+-->
+<resources>
+    <!-- ===== Material 3 color roles ===== -->
+    <color name="scheme_primary">#22D3EE</color>
+    <color name="scheme_on_primary">#00323D</color>
+    <color name="scheme_primary_container">#0B4C5A</color>
+    <color name="scheme_on_primary_container">#A9EFFA</color>
+
+    <color name="scheme_secondary">#9FBEDC</color>
+    <color name="scheme_on_secondary">#10243A</color>
+    <color name="scheme_secondary_container">#24384F</color>
+    <color name="scheme_on_secondary_container">#CFE1F4</color>
+
+    <color name="scheme_tertiary">#F3C572</color>
+    <color name="scheme_on_tertiary">#3D2C00</color>
+    <color name="scheme_tertiary_container">#574018</color>
+    <color name="scheme_on_tertiary_container">#FBE2AE</color>
+
+    <color name="scheme_error">#FFB4AB</color>
+    <color name="scheme_on_error">#690005</color>
+    <color name="scheme_error_container">#93000A</color>
+    <color name="scheme_on_error_container">#FFDAD6</color>
+
+    <color name="scheme_background">#0B1220</color>
+    <color name="scheme_on_background">#E6ECF7</color>
+
+    <color name="scheme_surface">#0B1220</color>
+    <color name="scheme_on_surface">#E6ECF7</color>
+    <color name="scheme_surface_variant">#1E293B</color>
+    <color name="scheme_on_surface_variant">#A3B2C8</color>
+
+    <!-- Cards/sheets step *up* in tone as they rise, rather than casting shadows. -->
+    <color name="scheme_surface_container_lowest">#060B14</color>
+    <color name="scheme_surface_container_low">#101A2B</color>
+    <color name="scheme_surface_container">#151E30</color>
+    <color name="scheme_surface_container_high">#1C2740</color>
+    <color name="scheme_surface_container_highest">#24314E</color>
+
+    <color name="scheme_inverse_surface">#E6ECF7</color>
+    <color name="scheme_inverse_on_surface">#17202E</color>
+
+    <color name="scheme_outline">#7C8CA6</color>
+    <color name="scheme_outline_variant">#2C3A54</color>
+
+    <!-- ===== Maintenance status ===== -->
+    <!-- Fills stay deep (white badge text sits on them) but are nudged brighter so they don't go
+         muddy against the navy surface. -->
+    <color name="status_ok">#33903C</color>
+    <color name="status_due">#C2650A</color>
+    <color name="status_overdue">#CF3030</color>
+
+    <!-- Text/icon variants invert to light tints so they read on the dark background. -->
+    <color name="status_ok_text">#7EE39A</color>
+    <color name="status_due_text">#FFC168</color>
+    <color name="status_overdue_text">#FF9C90</color>
+
+    <color name="warning_amber">#F3C572</color>
+
+    <!-- Categorical accents — inverted for dark: deep container, bright glyph. -->
+    <color name="accent_1_fg">#67E8F9</color>
+    <color name="accent_1_bg">#0E4654</color>
+    <color name="accent_2_fg">#FBCF7A</color>
+    <color name="accent_2_bg">#4A3612</color>
+    <color name="accent_3_fg">#C4A6FF</color>
+    <color name="accent_3_bg">#382558</color>
+    <color name="accent_4_fg">#7FE0A5</color>
+    <color name="accent_4_bg">#12402A</color>
+    <color name="accent_5_fg">#FFA5BC</color>
+    <color name="accent_5_bg">#4E1B2C</color>
+</resources>

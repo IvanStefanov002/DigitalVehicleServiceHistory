@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
@@ -12,12 +13,13 @@
         android:orientation="horizontal"
         android:padding="12dp">
 
-        <ImageView
+        <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/imgVehicle"
             android:layout_width="80dp"
             android:layout_height="80dp"
             android:scaleType="centerCrop"
-            android:src="@android:drawable/ic_menu_gallery"/>
+            android:src="@drawable/car_placeholder"
+            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Vehicle.Thumbnail"/>
 
         <LinearLayout
             android:layout_width="0dp"
@@ -36,6 +38,55 @@
                 android:id="@+id/txtModel"
                 android:textSize="16sp"
                 android:text="320d" android:layout_height="match_parent" android:layout_width="match_parent"/>
+        </LinearLayout>
+
+        <!-- Two independent markers, stacked. They are deliberately NOT merged into one pill:
+             the service badge means "this car needs work", the document badge means "this car may be
+             illegal to drive", and a single „Просрочено“ could no longer tell you which. -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="8dp"
+            android:orientation="vertical"
+            android:gravity="end">
+
+            <!-- Service reminder badge; shown + tinted per-vehicle in the adapter, hidden when unknown. -->
+            <TextView
+                android:id="@+id/txtVehicleStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_status_pill"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:textColor="@color/white"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <!-- Document validity badge. The shield glyph is what separates it from the service pill
+                 at a glance. Shown ONLY when something is expiring or expired — there is no green
+                 "all documents fine" state, because two of the three dates are self-reported and a
+                 green badge would be a claim the app can't back. Absence means "nothing to flag". -->
+            <TextView
+                android:id="@+id/txtVehicleDocStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/bg_status_pill"
+                android:drawableStart="@drawable/ic_shield_small"
+                android:drawablePadding="4dp"
+                android:drawableTint="@color/white"
+                android:paddingStart="8dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:textColor="@color/white"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
