@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Section header above each vehicle-type group on the Автопарк tab. Deliberately quiet — a small
+  caps label on the page background rather than a card, so it separates the groups without
+  competing with the vehicle rows it introduces. Inflated only when the fleet actually holds more
+  than one type; see VehicleAdapter.rebuildRows().
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="4dp"
+    android:paddingEnd="4dp"
+    android:paddingTop="10dp"
+    android:paddingBottom="8dp">
+
+    <ImageView
+        android:id="@+id/groupIcon"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        app:tint="?attr/colorOnSurfaceVariant"
+        android:contentDescription="@null" />
+
+    <TextView
+        android:id="@+id/groupLabel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="8dp"
+        android:textAllCaps="true"
+        android:letterSpacing="0.06"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/groupCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="12sp" />
+</LinearLayout>

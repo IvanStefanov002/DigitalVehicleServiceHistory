@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="12dp"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="?attr/colorOutlineVariant"
+    app:cardBackgroundColor="?attr/colorSurface">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Title + status badge -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/txtItemName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:text="Brake discs" />
+
+            <TextView
+                android:id="@+id/txtStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_status_pill"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:text="OK" />
+
+            <!-- Opens the record's notes in a dialog. Hidden by bindMaintenanceCard when the record
+                 has none — an always-present button that opens an empty popup is worse than no
+                 button, and its absence is itself the "no notes" signal. -->
+            <ImageButton
+                android:id="@+id/btnNotes"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="4dp"
+                android:padding="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_notes"
+                app:tint="?attr/colorOnSurfaceVariant"
+                android:contentDescription="@string/record_notes_cd" />
+
+            <!-- Opens the attached document photo (receipt / invoice / protocol) full-screen. Hidden
+                 by bindMaintenanceCard when the record has no documentId — same rule as btnNotes: its
+                 absence is the "nothing attached" signal, and it degrades cleanly on a server build
+                 that doesn't send the field. -->
+            <ImageButton
+                android:id="@+id/btnDocument"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="4dp"
+                android:padding="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_receipt"
+                app:tint="?attr/colorOnSurfaceVariant"
+                android:contentDescription="@string/record_document_cd" />
+
+            <!-- Deletes this single maintenance record. Hidden by bindMaintenanceCard when the
+                 payload carries no record id, so it degrades cleanly on older server builds. -->
+            <ImageButton
+                android:id="@+id/btnDeleteRecord"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="4dp"
+                android:padding="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_delete"
+                app:tint="?attr/colorOnSurfaceVariant"
+                android:contentDescription="@string/record_delete_cd" />
+        </LinearLayout>
+
+        <!-- Progress toward the next service -->
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/progressService"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:max="100"
+            android:indeterminate="false"
+            app:trackThickness="6dp"
+            app:trackCornerRadius="3dp" />
+
+        <!-- Last / next change figures -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="12dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAllCaps="true"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="11sp"
+                    android:letterSpacing="0.04"
+                    android:text="@string/last_change" />
+
+                <TextView
+                    android:id="@+id/txtLastChange"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:text="180 000 km" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="end">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAllCaps="true"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="11sp"
+                    android:letterSpacing="0.04"
+                    android:text="@string/next_change" />
+
+                <TextView
+                    android:id="@+id/txtNextChange"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:text="200 000 km" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Remaining / overdue summary, with the price paid on the same line. The two are
+             independent: a record can carry a cost without enough mileage data for a status, and
+             vice versa, so bindMaintenanceCard shows/hides them separately. -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal"
+            android:baselineAligned="true"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/txtRemaining"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textSize="13sp"
+                android:text="20 000 km remaining" />
+
+            <TextView
+                android:id="@+id/txtCost"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:text="120,00 €." />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

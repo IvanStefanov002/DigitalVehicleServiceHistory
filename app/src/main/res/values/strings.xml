@@ -1,3 +1,457 @@
 <resources>
     <string name="app_name">MaintenanceApp</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_vehicles">Автопарк</string>
+    <string name="nav_maintenance">Поддръжка</string>
+    <string name="nav_profile">Профил</string>
+
+    <!-- Home / Автопарк tab -->
+    <string name="home_title">Вашият автопарк</string>
+    <string name="home_empty_title">Все още нямате автомобили</string>
+    <string name="home_empty_hint">Докоснете бутона по-долу, за да добавите първия си автомобил</string>
+    <string name="fab_add">Добави</string>
+    <plurals name="vehicle_count">
+        <item quantity="one">%d автомобил</item>
+        <item quantity="other">%d автомобила</item>
+    </plurals>
+    <!-- Used instead of vehicle_count once the fleet holds something that isn't a car: „3
+         автомобила“ over a list containing a motorcycle is simply wrong, and the generic wording is
+         only worth its clumsiness in that case. -->
+    <plurals name="vehicle_count_mixed">
+        <item quantity="one">%d превозно средство</item>
+        <item quantity="other">%d превозни средства</item>
+    </plurals>
+    <!-- Автопарк overview dashboard (replaces the old single banner) -->
+    <string name="ov_attention">За внимание</string>
+    <string name="ov_all_good">Всичко е наред</string>
+    <string name="ov_service_label">Обслужване</string>
+    <string name="ov_docs_label">Документи</string>
+    <string name="ov_svc_overdue">просрочени: %1$d</string>
+    <string name="ov_svc_due">предстоящи: %1$d</string>
+    <string name="ov_doc_overdue">изтекли: %1$d</string>
+    <string name="ov_doc_due">изтичащи: %1$d</string>
+
+    <!-- Service reminder banner (Автопарк tab) -->
+    <plurals name="reminder_overdue">
+        <item quantity="one">%d автомобил с просрочено обслужване</item>
+        <item quantity="other">%d автомобила с просрочено обслужване</item>
+    </plurals>
+    <plurals name="reminder_due">
+        <item quantity="one">%d автомобил с предстоящо обслужване</item>
+        <item quantity="other">%d автомобила с предстоящо обслужване</item>
+    </plurals>
+
+    <!-- Document validity, same tab. Separate lines from the service ones: an expired vignette and
+         an overdue oil change are different problems with different fixes. -->
+    <plurals name="reminder_doc_overdue">
+        <item quantity="one">%d автомобил с изтекли документи</item>
+        <item quantity="other">%d автомобила с изтекли документи</item>
+    </plurals>
+    <plurals name="reminder_doc_due">
+        <item quantity="one">%d автомобил с изтичащи документи</item>
+        <item quantity="other">%d автомобила с изтичащи документи</item>
+    </plurals>
+
+    <!-- Vehicle detail screen -->
+    <string name="vehicle_details">Детайли за автомобила</string>
+    <string name="back">Назад</string>
+    <string name="spec_year">Година</string>
+    <string name="spec_plate">Регистрационен номер</string>
+    <string name="spec_mileage">Пробег</string>
+    <!-- Vehicle type. The singular labels are used by the add/edit pickers and the detail
+         screen's spec row; the plural ones head the groups on the Автопарк tab. Order and meaning
+         are owned by util/VehicleType, not by this file. -->
+    <string name="vt_car">Лек автомобил</string>
+    <string name="vt_motorcycle">Мотоциклет</string>
+    <string name="vt_van">Бус</string>
+    <string name="vt_truck">Камион</string>
+    <string name="vt_group_car">Автомобили</string>
+    <string name="vt_group_motorcycle">Мотоциклети</string>
+    <string name="vt_group_van">Бусове</string>
+    <string name="vt_group_truck">Камиони</string>
+
+    <string name="spec_type">Тип</string>
+
+    <!-- Vignette exemption. Motorcycles pay no toll on the national network, so the card states
+         that instead of showing the authority's (correct, but useless) „no vignette“ answer as an
+         expired document. -->
+    <string name="cmp_st_exempt">Не се изисква</string>
+    <string name="cmp_vignette_exempt">Не се изисква винетка</string>
+    <string name="cmp_vignette_exempt_hint">Мотоциклетите са освободени от такса за ползване на републиканската пътна мрежа.</string>
+    <string name="spec_fuel">Гориво</string>
+    <string name="spec_vin">VIN</string>
+    <string name="spec_color">Цвят</string>
+    <string name="history_title">История на поддръжката</string>
+    <string name="no_records">Все още няма записи.</string>
+    <string name="last_change">Последна смяна</string>
+    <string name="next_change">Следваща смяна</string>
+    <string name="st_ok">Наред</string>
+    <string name="st_due">Предстои</string>
+    <string name="st_overdue">Просрочено</string>
+    <string name="km_remaining">Оставащи %s</string>
+    <string name="km_overdue">Просрочено с %s</string>
+    <string name="record_cost">Цена: %s</string>
+    <string name="record_notes_cd">Виж бележките</string>
+    <string name="record_notes_title">Бележки</string>
+    <string name="action_close">Затвори</string>
+    <!-- Currency suffix. Kept as one string so the whole app changes together (e.g. to €). -->
+    <string name="currency_suffix">€</string>
+
+    <!-- Поддръжка tab + add-service form -->
+    <string name="maint_title">Поддръжка</string>
+    <string name="maint_intro">Добавете запис за извършено обслужване. Историята за всеки автомобил се вижда в неговите детайли.</string>
+    <string name="maint_add">Добави</string>
+    <string name="maint_no_vehicles">Първо добавете автомобил от таб „Автопарк“.</string>
+    <string name="am_title">Ново обслужване</string>
+    <string name="am_vehicle">Автомобил</string>
+    <string name="am_type">Вид обслужване</string>
+    <string name="am_mileage">Пробег (км)</string>
+    <string name="am_date">Дата (по избор)</string>
+    <string name="am_cost">Цена (по избор)</string>
+    <string name="am_cost_helper">Платената сума за обслужването</string>
+    <string name="am_invalid_cost">Въведете валидна цена.</string>
+    <string name="am_notes">Бележки (по избор)</string>
+    <string name="am_save">Запази</string>
+    <string name="am_saved">Записът е добавен</string>
+    <string name="am_error">Грешка при запис. Опитайте отново.</string>
+    <string name="am_invalid_mileage">Въведете валиден пробег.</string>
+    <string name="am_intro">Изберете автомобил и вид обслужване, след което въведете пробега при извършването.</string>
+    <string name="am_section_vehicle">Автомобил</string>
+    <string name="am_section_service">Обслужване</string>
+    <string name="am_section_details">Допълнително</string>
+    <string name="am_pick_date">Изберете дата</string>
+    <string name="am_mileage_helper">Пробегът на автомобила към момента на обслужването</string>
+    <string name="maint_types_title">Видове обслужване и интервали</string>
+    <string name="maint_interval">На всеки %s</string>
+    <string name="maint_interval_unknown">По препоръка на производителя</string>
+    <string name="maint_interval_label">Интервал за смяна</string>
+    <string name="maint_warning_title">Внимание</string>
+    <string name="maint_info_cd">Повече информация</string>
+
+    <!-- Service history PDF export -->
+    <string name="pdf_title">Сервизна история</string>
+    <string name="pdf_exported">Издадена на</string>
+    <string name="pdf_section_summary">Последно обслужване по видове</string>
+    <string name="pdf_section_history">Пълна история</string>
+    <string name="pdf_col_date">Дата</string>
+    <string name="pdf_col_service">Обслужване</string>
+    <string name="pdf_col_mileage">Пробег</string>
+    <string name="pdf_col_next">Следващо</string>
+    <string name="pdf_no_records">Няма записани обслужвания.</string>
+    <string name="pdf_page">Стр. %d</string>
+    <string name="pdf_export_cd">Експортирай историята</string>
+    <string name="pdf_exporting">Подготвяне на PDF…</string>
+    <string name="pdf_share_title">Сервизна история</string>
+    <string name="pdf_error">Неуспешно създаване на PDF. Опитайте отново.</string>
+    <string name="pdf_no_app">Няма приложение за отваряне на PDF.</string>
+    <string name="pdf_action_save">Запази в устройството</string>
+    <string name="pdf_action_share">Сподели</string>
+    <string name="pdf_saved">Файлът е запазен</string>
+    <string name="pdf_save_error">Неуспешно запазване на файла.</string>
+    <string name="pdf_open">Отвори</string>
+
+    <!-- Shareable history link (QR) -->
+    <string name="share_title">Линк към историята</string>
+    <string name="share_intro">Купувачът сканира кода и вижда сервизната история в браузър — без да инсталира приложението. Линкът може да бъде спрян по всяко време.</string>
+    <string name="share_qr_cd">QR код с линк към сервизната история</string>
+    <string name="share_expires">Валиден до %s</string>
+    <string name="share_no_expiry">Без срок на валидност</string>
+    <string name="share_copy">Копирай</string>
+    <string name="share_send">Изпрати</string>
+    <string name="share_copied">Линкът е копиран</string>
+    <string name="share_revoke">Спри линка</string>
+    <string name="share_revoke_title">Спиране на линка</string>
+    <string name="share_revoke_message">Линкът ще спре да работи за всички, на които вече сте го изпратили. Сигурни ли сте?</string>
+    <string name="share_revoked">Линкът е спрян</string>
+    <string name="share_revoke_error">Линкът не беше спрян. Опитайте отново.</string>
+    <string name="share_error">Линкът не можа да бъде създаден. Опитайте отново.</string>
+    <string name="pdf_action_link">Линк с QR код</string>
+
+    <!-- Biometric unlock -->
+    <string name="bio_setting_title">Заключване с биометрия</string>
+    <string name="bio_setting_summary">Изисквай пръстов отпечатък при отваряне</string>
+    <string name="bio_setting_unavailable">Няма регистрирана биометрия на устройството</string>
+    <string name="bio_prompt_title">Отключване</string>
+    <string name="bio_prompt_subtitle">Потвърдете самоличността си, за да продължите</string>
+    <string name="bio_use_password">Вход с парола</string>
+    <string name="bio_unlock">Отключи с биометрия</string>
+    <string name="bio_unavailable">Биометрията не е достъпна. Влезте с потребител и парола.</string>
+    <string name="bio_enabled">Заключването е включено</string>
+    <string name="bio_disabled">Заключването е изключено</string>
+
+    <!-- Service reminders (background notifications) -->
+    <string name="rem_channel_name">Напомняния за обслужване</string>
+    <string name="rem_channel_desc">Известия за предстоящо и просрочено обслужване на автомобилите ви.</string>
+    <plurals name="rem_overdue_title">
+        <item quantity="one">Просрочено обслужване</item>
+        <item quantity="other">Просрочено обслужване при %d автомобила</item>
+    </plurals>
+    <plurals name="rem_due_title">
+        <item quantity="one">Предстоящо обслужване</item>
+        <item quantity="other">Предстоящо обслужване при %d автомобила</item>
+    </plurals>
+
+    <!-- Document-validity notifications. Own channel, so a user can mute service nags without
+         losing the ones that carry a fine. -->
+    <string name="rem_doc_channel_name">Напомняния за документи</string>
+    <string name="rem_doc_channel_desc">Известия за изтичаща винетка, ГТП и Гражданска отговорност.</string>
+    <plurals name="rem_doc_overdue_title">
+        <item quantity="one">Изтекли документи</item>
+        <item quantity="other">Изтекли документи при %d автомобила</item>
+    </plurals>
+    <plurals name="rem_doc_due_title">
+        <item quantity="one">Изтичащи документи</item>
+        <item quantity="other">Изтичащи документи при %d автомобила</item>
+    </plurals>
+
+    <!-- Add vehicle -->
+    <string name="av_title">Нов автомобил</string>
+    <string name="av_intro">Попълнете данните за автомобила. Полетата в „Основни данни“ са задължителни.</string>
+    <string name="av_photo_section">Снимка</string>
+    <string name="av_section_main">Основни данни</string>
+    <string name="av_section_extra">Допълнителни данни</string>
+    <string name="av_eg_make">напр. BMW</string>
+    <string name="av_eg_model">напр. 320d</string>
+    <string name="av_eg_year">напр. 2018</string>
+    <string name="av_eg_plate">напр. CA1234AB</string>
+    <string name="av_km">км</string>
+    <string name="av_mileage_helper">Текущ пробег на автомобила</string>
+    <string name="av_optional">По избор</string>
+    <string name="av_photo_mode_default">Стандартна</string>
+    <string name="av_photo_mode_upload">Моя снимка</string>
+    <string name="av_photo_pick">Избери снимка</string>
+    <string name="av_photo_cd">Снимка на автомобила</string>
+    <string name="av_photo_hint_default">Ще бъде използвана стандартна снимка.</string>
+    <string name="av_photo_hint_upload">Изберете снимка от галерията.</string>
+    <string name="av_photo_hint_picked">Снимката е избрана.</string>
+
+    <!-- Delete vehicle -->
+    <string name="delete_vehicle_cd">Изтрий автомобила</string>
+    <string name="delete_confirm_title">Изтриване на автомобил</string>
+    <string name="delete_confirm_message">Сигурни ли сте, че искате да изтриете %1$s? Историята на обслужванията му също ще бъде премахната. Действието е необратимо.</string>
+    <string name="action_delete">Изтрий</string>
+    <string name="delete_ok">Автомобилът е изтрит</string>
+    <string name="delete_error">Грешка при изтриване. Опитайте отново.</string>
+
+    <!-- Delete a single maintenance record -->
+    <string name="record_delete_cd">Изтрий записа</string>
+    <string name="record_delete_title">Изтриване на запис</string>
+    <string name="record_delete_message">Да се изтрие ли записът „%1$s“ при %2$s? Действието е необратимо.</string>
+    <string name="record_deleted">Записът е изтрит</string>
+    <string name="record_delete_error">Грешка при изтриване на записа.</string>
+
+    <!-- Edit vehicle. The ev_make..ev_color field labels and ev_save are shared with the add-vehicle
+         form (activity_add_vehicle.xml) so the same field can never be worded two ways; keep them
+         neutral rather than edit-specific. -->
+    <string name="edit_vehicle">Редактиране</string>
+    <string name="edit_vehicle_cd">Редактирай автомобила</string>
+    <string name="ev_make">Марка</string>
+    <string name="ev_model">Модел</string>
+    <string name="ev_year">Година</string>
+    <string name="ev_plate">Регистрационен номер</string>
+    <string name="ev_mileage">Пробег (км)</string>
+    <string name="ev_type">Тип превозно средство</string>
+    <string name="ev_fuel">Гориво</string>
+    <string name="ev_vin">VIN</string>
+    <string name="ev_color">Цвят</string>
+    <string name="ev_save">Запази</string>
+    <string name="ev_saved">Промените са запазени</string>
+    <string name="ev_error">Грешка при запис. Опитайте отново.</string>
+
+    <!-- Login -->
+    <string name="app_tagline">Дигитална сервизна история</string>
+    <string name="login_heading">Вход</string>
+    <string name="login_username">Потребител или имейл</string>
+    <string name="login_password">Парола</string>
+    <string name="login_button">Вход</string>
+    <string name="login_empty">Моля, въведете потребител и парола</string>
+    <string name="login_invalid">Грешни данни за вход</string>
+    <string name="login_network_error">Мрежова грешка, опитайте отново</string>
+    <string name="login_no_account">Нямате профил? Регистрирайте се</string>
+
+    <!-- Register -->
+    <string name="reg_heading">Създайте профил</string>
+    <string name="reg_subtitle">Няколко данни и можете да започнете да водите сервизната история на автомобилите си.</string>
+    <string name="reg_full_name">Име и фамилия</string>
+    <string name="reg_username">Потребителско име</string>
+    <string name="reg_username_helper">Латински букви, цифри, точка, тире</string>
+    <string name="reg_email">Имейл</string>
+    <string name="reg_password">Парола</string>
+    <string name="reg_password_helper">Поне 8 символа</string>
+    <string name="reg_confirm">Потвърдете паролата</string>
+    <string name="reg_button">Регистрация</string>
+    <string name="reg_have_account">Вече имате профил? Вход</string>
+    <string name="reg_err_required">Полето е задължително</string>
+    <string name="reg_err_username_short">Поне 3 символа</string>
+    <string name="reg_err_username_chars">Само латински букви, цифри, точка, тире и долна черта</string>
+    <string name="reg_err_email">Невалиден имейл адрес</string>
+    <string name="reg_err_password_short">Паролата трябва да е поне 8 символа</string>
+    <string name="reg_err_confirm">Паролите не съвпадат</string>
+    <string name="reg_taken_username">Това потребителско име е заето</string>
+    <string name="reg_taken_email">Вече има профил с този имейл</string>
+    <string name="reg_error">Регистрацията не бе успешна. Опитайте отново.</string>
+    <string name="reg_network_error">Мрежова грешка. Профилът може да не е създаден — опитайте отново.</string>
+    <string name="reg_welcome">Добре дошли, %1$s!</string>
+    <string name="reg_created_please_login">Профилът е създаден. Влезте с новите си данни.</string>
+
+    <!-- Профил tab -->
+    <string name="profile_stat_vehicles">Автомобили</string>
+    <string name="profile_stat_mileage">Общ пробег</string>
+    <string name="profile_km">%s км</string>
+    <string name="profile_version">Версия</string>
+    <string name="profile_logout">Изход</string>
+    <string name="logout_confirm_title">Изход от профила</string>
+    <string name="logout_confirm_message">Сигурни ли сте, че искате да излезете?</string>
+    <string name="action_cancel">Отказ</string>
+
+    <!-- Documents & validity (per-vehicle: vignette / ГТП / ГО) ................................
+         Two tiers on one screen, and the wording has to keep them apart: the vignette is confirmed
+         by the toll authority, the other two are dates the user typed in. cmp_src_* and cmp_footnote
+         carry that distinction, so don't "tidy" them away. -->
+    <string name="cmp_title">Документи и валидности</string>
+    <string name="cmp_entry_subtitle">Винетка, ГТП, Гражданска отговорност</string>
+    <string name="cmp_entry_cd">Отвори документите на автомобила</string>
+
+    <string name="cmp_doc_vignette">Винетка</string>
+    <string name="cmp_doc_inspection">Технически преглед (ГТП)</string>
+    <string name="cmp_doc_insurance">Гражданска отговорност</string>
+
+    <string name="cmp_st_valid">Валидна</string>
+    <string name="cmp_st_expiring">Изтича</string>
+    <string name="cmp_st_expired">Изтекла</string>
+    <string name="cmp_st_unknown">Няма данни</string>
+    <string name="cmp_st_none">Няма</string>
+
+    <string name="cmp_valid_to">Валидна до</string>
+    <string name="cmp_no_date">Няма въведена дата</string>
+    <string name="cmp_checking">Проверява се…</string>
+    <string name="cmp_no_vignette">Няма валидна винетка</string>
+    <string name="cmp_unavailable">Проверката е недостъпна</string>
+    <string name="cmp_unavailable_hint">Не успяхме да се свържем с проверката. Издърпайте надолу, за да опитате отново.</string>
+
+    <string name="cmp_src_official">Проверено в Национално ТОЛ управление</string>
+    <string name="cmp_src_declared">По ваши данни — не е проверено</string>
+
+    <string name="cmp_expires_today">Изтича днес</string>
+    <plurals name="cmp_days_left">
+        <item quantity="one">Остава %d ден</item>
+        <item quantity="other">Остават %d дни</item>
+    </plurals>
+    <plurals name="cmp_days_overdue">
+        <item quantity="one">Изтекла преди %d ден</item>
+        <item quantity="other">Изтекла преди %d дни</item>
+    </plurals>
+
+    <string name="cmp_detail_number">№ %1$s</string>
+    <string name="cmp_detail_class">Категория %1$s</string>
+    <string name="cmp_detail_emissions">EURO %1$s</string>
+    <string name="cmp_detail_from">В сила от %1$s</string>
+    <string name="cmp_detail_checked">Проверено %1$s</string>
+    <string name="cmp_detail_installment">Следваща вноска: %1$s</string>
+    <string name="cmp_detail_installment_none">Няма въведена вноска</string>
+
+    <string name="cmp_set_date">Промени дата</string>
+    <string name="cmp_check_official">Провери</string>
+    <string name="cmp_buy_vignette">Купи винетка</string>
+    <string name="cmp_pick_inspection">Валидност на ГТП</string>
+    <string name="cmp_pick_insurance">Валидност на полицата</string>
+    <string name="cmp_pick_installment">Следваща вноска</string>
+    <string name="cmp_which_date">Коя дата да променим?</string>
+    <string name="cmp_clear_date">Изчисти датата</string>
+
+    <string name="cmp_renew_q_inspection">Мина ли прегледът?</string>
+    <string name="cmp_renew_q_insurance">Подновихте ли полицата?</string>
+    <string name="cmp_renew_year">Да, +1 година</string>
+    <string name="cmp_renewed">Обновено до %1$s</string>
+    <string name="cmp_checked_saved">Записано от справката: %1$s</string>
+
+    <!-- Assisted document check (in-app WebView over an official captcha-gated page) -->
+    <string name="vc_title">Проверка на документ</string>
+    <string name="vc_title_inspection">Проверка на ГТП</string>
+    <string name="vc_hint">Данните са копирани. Поставете ги в полето, решете кода за сигурност и стартирайте проверката. Ще ви предложим намерената дата.</string>
+    <string name="vc_hint_inspection">Рамата (VIN) е копирана. Поставете я в полето, потвърдете, че не сте робот, и натиснете „Провери“. Ще ви предложим намерената дата.</string>
+    <string name="vc_open_browser">Отвори в браузър</string>
+    <string name="vc_reload">Презареди</string>
+    <string name="vc_load_failed">Страницата не се зареди докрай. Опитайте да презаредите или я отворете в браузър.</string>
+    <string name="vc_result_found">Открихме дата в справката</string>
+    <string name="vc_result_one">Открита дата: %1$s</string>
+    <string name="vc_use_date">Използвай датата</string>
+    <string name="vc_pick_date">Коя е датата на валидност?</string>
+
+    <string name="cmp_plate_copied">Номерът %1$s е копиран — поставете го в страницата</string>
+    <string name="cmp_vin_copied">Рамата %1$s е копирана — поставете я в страницата</string>
+    <string name="cmp_no_browser">Няма приложение, което да отвори връзката</string>
+    <string name="cmp_saved">Записано</string>
+    <string name="cmp_save_error">Датата не бе записана. Опитайте отново.</string>
+
+    <string name="cmp_footnote">Винетката се проверява автоматично в Национално ТОЛ управление. ГТП и Гражданската отговорност се въвеждат ръчно: официалните им проверки изискват код за сигурност (CAPTCHA), затова напомнянията за тях се основават на въведените от вас дати. Бутонът „Провери“ отваря официалната страница в браузъра с копиран номер на рама (VIN) или регистрационен номер.</string>
+
+    <string-array name="fuel_types">
+        <item>Petrol</item>
+        <item>Diesel</item>
+        <item>Electric</item>
+        <item>Hybrid</item>
+        <item>LPG</item>
+    </string-array>
+
+    <!-- Document photo on a maintenance record -->
+    <string name="am_section_document">Документ</string>
+    <string name="am_doc_intro">Прикачете снимка на касовия бон, фактурата или протокола. По избор.</string>
+    <string name="am_doc_attach">Прикачи снимка</string>
+    <string name="am_doc_replace">Смени снимката</string>
+    <string name="am_doc_remove">Премахни</string>
+    <string name="am_doc_read_failed">Снимката не можа да се прочете.</string>
+    <string name="am_doc_preview_cd">Прикачена снимка на документ</string>
+    <string name="am_saved_doc_failed">Записът е запазен, но документът не се качи. Опитайте да го добавите отново.</string>
+    <string name="record_document_cd">Виж документа</string>
+    <string name="doc_viewer_title">Документ</string>
+    <string name="doc_viewer_hint">Щипнете или докоснете двукратно за увеличение.</string>
+    <string name="doc_viewer_cd">Снимка на документа</string>
+    <string name="doc_load_failed">Документът не можа да се зареди.</string>
+
+    <!-- ============ Oil advisor (Поддръжка tab → OilRecommendationActivity) ============ -->
+
+    <!-- Entry point on the Поддръжка tab -->
+    <string name="maint_oil_card_title">Препоръка за масло</string>
+    <string name="maint_oil_card_subtitle">Кое моторно масло е подходящо за вашия двигател</string>
+
+    <string name="oil_title">Моторно масло</string>
+    <string name="oil_intro">Изберете автомобил и код на двигателя. Препоръката е по вискозитет и одобрение на производителя — те определят дали маслото е подходящо, не марката.</string>
+
+    <string name="oil_section_vehicle">Автомобил</string>
+    <string name="oil_section_engine">Двигател</string>
+    <string name="oil_section_result">Препоръка</string>
+
+    <string name="oil_vehicle">Автомобил</string>
+    <string name="oil_engine">Код на двигателя</string>
+    <string name="oil_engine_helper">Например EA288, M57, ARL. Изписан е в талона (част II, точка P.5) или на табелката върху двигателя.</string>
+    <string name="oil_fuel">Гориво</string>
+    <string name="oil_recommend">Препоръчай масло</string>
+    <string name="oil_retry">Опитай отново</string>
+
+    <string name="oil_engines_failed">Списъкът с двигатели не се зареди. Можете да въведете кода ръчно.</string>
+    <string name="oil_no_engine">Въведете или изберете код на двигателя.</string>
+    <string name="oil_electric">Електрическите автомобили не използват моторно масло.</string>
+    <!-- The advisor answers for cars only: motorcycle oil (wet clutch, JASO MA) and truck oil are
+         different products, and a car spec shown for either would be confidently wrong. -->
+    <string name="oil_cars_only">Препоръката за масло важи само за леки автомобили.</string>
+    <string name="oil_no_cars">Няма добавен лек автомобил. Препоръката за масло важи само за леки автомобили.</string>
+    <string name="oil_not_found">За този двигател още няма данни. Проверете кода или опитайте с друг.</string>
+    <string name="oil_error">Препоръката не бе заредена. Опитайте отново.</string>
+
+    <string name="oil_engine_label">Двигател: %1$s</string>
+    <string name="oil_viscosity_label">Вискозитет</string>
+    <string name="oil_specs_label">Изисквани одобрения</string>
+    <string name="oil_capacity_label">Количество с филтъра</string>
+    <string name="oil_capacity_value">%1$s л</string>
+    <string name="oil_interval_label">Интервал на смяна</string>
+    <string name="oil_interval_km">%1$s км</string>
+    <string name="oil_interval_both">%1$s км / %2$d мес.</string>
+    <string name="oil_products_label">Подходящи масла</string>
+    <string name="oil_alt_label">Алтернативен вискозитет</string>
+
+    <!-- The provenance rule from the compliance screen applies here too: say what this is based on
+         and what actually binds, so a recommendation is never mistaken for the manufacturer's word. -->
+    <string name="oil_footnote">Препоръката е ориентировъчна и се извежда от кода на двигателя. Задължаващото изискване е одобрението на производителя (напр. VW 507 00, MB 229.51, BMW LL-04) — то е изписано в инструкцията за експлоатация на автомобила. Проверете го, преди да купите масло.</string>
 </resources>

@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  One service-type card in the Поддръжка 2-column grid. Tapping the card toggles #detailSection
+  (the recommended interval); the ⓘ button toggles #warningSection. Both are driven by
+  MaintenanceTypeAdapter — keep the ids in sync with its ViewHolder.
+
+  Content is left-aligned rather than centred: with long Bulgarian type names, centred text in a
+  narrow grid cell wraps into a ragged block. #txtTypeName carries minLines="2" so single- and
+  double-line cards in the same row come out the same height.
+-->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/typeCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="6dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="?attr/colorOutlineVariant"
+    app:cardBackgroundColor="?attr/colorSurfaceContainer">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="14dp">
+
+            <!-- Accent icon chip. Squircle rather than a circle; tinted from the theme so it
+                 flips with light/dark. -->
+            <!-- One consistent chip colour across the whole grid: the wrench means the same thing on
+                 every card, so varying its tint per card implied a distinction that isn't there. -->
+            <ImageView
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:padding="10dp"
+                android:background="@drawable/bg_icon_chip"
+                android:backgroundTint="?attr/colorPrimaryContainer"
+                android:src="@drawable/ic_build"
+                app:tint="?attr/colorOnPrimaryContainer"
+                android:contentDescription="@null" />
+
+            <!-- Name + chevron on one row: the chevron reads as an affordance next to the label
+                 instead of floating under it. -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:orientation="horizontal"
+                android:baselineAligned="false"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/txtTypeName"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minLines="2"
+                    android:maxLines="3"
+                    android:ellipsize="end"
+                    android:lineSpacingExtra="1dp"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    tools:text="Смяна на масло и филтър" />
+
+                <ImageView
+                    android:id="@+id/imgChevron"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginStart="6dp"
+                    android:src="@drawable/ic_expand_more"
+                    app:tint="?attr/colorOnSurfaceVariant"
+                    android:contentDescription="@null" />
+            </LinearLayout>
+
+            <!-- Expandable detail: recommended interval, revealed on card tap -->
+            <LinearLayout
+                android:id="@+id/detailSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="12dp"
+                    android:background="?attr/colorOutlineVariant" />
+
+                <TextView
+                    style="@style/Label.Overline"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/maint_interval_label" />
+
+                <TextView
+                    android:id="@+id/txtTypeInterval"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:textColor="?attr/colorPrimary"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    tools:text="На всеки 15 000 км" />
+            </LinearLayout>
+
+            <!-- Warning block: revealed by the ⓘ button, only when a description exists -->
+            <LinearLayout
+                android:id="@+id/warningSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="12dp"
+                android:padding="10dp"
+                android:background="@drawable/bg_warning"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_marginTop="1dp"
+                    android:src="@drawable/ic_warning"
+                    app:tint="@color/warning_amber"
+                    android:contentDescription="@null" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/maint_warning_title"
+                        android:textAllCaps="true"
+                        android:letterSpacing="0.06"
+                        android:textColor="@color/warning_amber"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/txtWarning"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:textColor="@color/warning_amber"
+                        android:textSize="13sp"
+                        tools:text="Сменя се по време, не само по пробег." />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- ⓘ (top-right); shown only when this type has a description -->
+        <ImageButton
+            android:id="@+id/imgInfo"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_info"
+            app:tint="@color/warning_amber"
+            android:visibility="gone"
+            android:contentDescription="@string/maint_info_cd" />
+    </FrameLayout>
+</com.google.android.material.card.MaterialCardView>

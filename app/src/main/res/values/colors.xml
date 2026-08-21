@@ -1,5 +1,96 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  LIGHT color scheme.
+
+  Every name here has a same-named counterpart in values-night/colors.xml, so a single themes.xml
+  can map the Material 3 color roles once and have them resolve per-mode automatically. Tune the
+  palette here (and in the night file) — layouts should reference ?attr/... roles, never raw hex.
+
+  Hue family: cyan / azure ("instrument cluster"). Light uses a deep azure primary so it stays
+  legible on white; dark uses bright cyan so it glows on navy.
+-->
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- ===== Material 3 color roles ===== -->
+    <color name="scheme_primary">#0E7490</color>
+    <color name="scheme_on_primary">#FFFFFFFF</color>
+    <color name="scheme_primary_container">#C7EEF8</color>
+    <color name="scheme_on_primary_container">#04333D</color>
+
+    <color name="scheme_secondary">#3F5C77</color>
+    <color name="scheme_on_secondary">#FFFFFFFF</color>
+    <color name="scheme_secondary_container">#D8E6F2</color>
+    <color name="scheme_on_secondary_container">#17293A</color>
+
+    <color name="scheme_tertiary">#8A5A00</color>
+    <color name="scheme_on_tertiary">#FFFFFFFF</color>
+    <color name="scheme_tertiary_container">#FFE3B3</color>
+    <color name="scheme_on_tertiary_container">#2B1B00</color>
+
+    <color name="scheme_error">#B3261E</color>
+    <color name="scheme_on_error">#FFFFFFFF</color>
+    <color name="scheme_error_container">#F9DEDC</color>
+    <color name="scheme_on_error_container">#410E0B</color>
+
+    <color name="scheme_background">#F4F7FB</color>
+    <color name="scheme_on_background">#0F1926</color>
+
+    <color name="scheme_surface">#FFFFFFFF</color>
+    <color name="scheme_on_surface">#0F1926</color>
+    <color name="scheme_surface_variant">#E2E9F2</color>
+    <color name="scheme_on_surface_variant">#4F5D70</color>
+
+    <!-- Elevation is expressed as container tone, not shadow (M3 style). -->
+    <color name="scheme_surface_container_lowest">#FFFFFFFF</color>
+    <color name="scheme_surface_container_low">#F8FAFD</color>
+    <color name="scheme_surface_container">#F1F5FA</color>
+    <color name="scheme_surface_container_high">#E9EFF7</color>
+    <color name="scheme_surface_container_highest">#E1E9F3</color>
+
+    <color name="scheme_inverse_surface">#1B2432</color>
+    <color name="scheme_inverse_on_surface">#EDF1F7</color>
+
+    <color name="scheme_outline">#6F7C8C</color>
+    <color name="scheme_outline_variant">#CFD8E4</color>
+
+    <!-- ===== Maintenance status ===== -->
+    <!-- FILL colors: used as a solid pill/badge background with white text on top, so these stay
+         dark enough for that text to pass contrast in both modes. -->
+    <color name="status_ok">#2E7D32</color>       <!-- green: plenty of km left -->
+    <color name="status_due">#B85C00</color>      <!-- orange: service approaching -->
+    <color name="status_overdue">#C62828</color>  <!-- red: past the suggested mileage -->
+
+    <!-- TEXT colors: the same three states used as text/icon tint directly on the app background
+         (the Автопарк reminder banner). These must invert between modes — a fill-grade dark red is
+         unreadable on navy — which is why they're separate from the fills above. -->
+    <color name="status_ok_text">#1B5E20</color>
+    <color name="status_due_text">#8A4200</color>
+    <color name="status_overdue_text">#B3261E</color>
+
+    <!-- Service-type warning text/icon, shown on the translucent amber @drawable/bg_warning. -->
+    <color name="warning_amber">#8A5300</color>
+
+    <!-- ===== Categorical accents =====
+         A small rotating palette for icon chips and section headers, so screens made of many
+         similar cards don't read as one flat block of the primary hue. Each pair is a soft
+         container (_bg) with a matching legible foreground (_fg); night variants invert the
+         relationship (dark container, light glyph). Referenced by array/accent_fg + accent_bg. -->
+    <color name="accent_1_fg">#0E7490</color>
+    <color name="accent_1_bg">#CFF1FA</color>
+    <color name="accent_2_fg">#92600A</color>
+    <color name="accent_2_bg">#FDEBC8</color>
+    <color name="accent_3_fg">#6D3FBF</color>
+    <color name="accent_3_bg">#E8DEFB</color>
+    <color name="accent_4_fg">#1F7A45</color>
+    <color name="accent_4_bg">#CFF0DC</color>
+    <color name="accent_5_fg">#A83250</color>
+    <color name="accent_5_bg">#FBDCE4</color>
+
+    <!-- Backdrop behind a document photo in the viewer. Intentionally the SAME dark neutral in both
+         themes and not a ?attr/ role: a scanned receipt is off-white paper, and on a light surface its
+         edges vanish so the user can't tell where the document stops. Photo viewers are dark for this
+         reason. Same class of decision as the PDF export's hardcoded colours. -->
+    <color name="document_backdrop">#12161F</color>
 </resources>

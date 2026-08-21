@@ -4,6 +4,8 @@
 
     <!-- internet access -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Service-due reminders. Runtime-requested on Android 13+; auto-granted below that. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:debuggable="true"
@@ -12,6 +14,7 @@
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.MaintenanceApp">
@@ -25,12 +28,56 @@
             </intent-filter>
         </activity>
 
+        <!-- Sign-up, opened from the link at the bottom of LoginActivity -->
+        <activity android:name=".RegisterActivity"
+            android:exported="false" />
+
         <!-- MainActivity will be opened after login -->
         <activity android:name=".MainActivity"
             android:exported="true" />
 
         <activity android:name=".AddVehicleActivity"
             android:exported="false"/>
+
+        <activity android:name=".VehicleDetailActivity"
+            android:exported="false"/>
+
+        <activity android:name=".AddMaintenanceActivity"
+            android:exported="false"/>
+
+        <!-- Oil advisor, opened from the Поддръжка tab. Read-only: no result contract. -->
+        <activity android:name=".OilRecommendationActivity"
+            android:exported="false"/>
+
+        <activity android:name=".EditVehicleActivity"
+            android:exported="false"/>
+
+        <activity android:name=".ShareHistoryActivity"
+            android:exported="false"/>
+
+        <!-- Per-vehicle document validity: vignette (fetched) + ГТП/ГО (user-declared) -->
+        <activity android:name=".VehicleComplianceActivity"
+            android:exported="false"/>
+
+        <!-- Assisted ГТП check: hosts RTA's public vin-check page in a WebView -->
+        <activity android:name=".VinCheckActivity"
+            android:exported="false"/>
+
+        <!-- Hands exported service-history PDFs to other apps as content:// URIs. Required from
+             API 24 on: sharing a file:// URI throws FileUriExposedException. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+        <activity android:name=".DocumentViewerActivity"
+            android:exported="false"
+            android:label="@string/doc_viewer_title" />
+
     </application>
 
 </manifest>

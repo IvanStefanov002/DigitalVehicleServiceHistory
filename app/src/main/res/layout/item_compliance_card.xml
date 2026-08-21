@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One document's validity card (vignette / ГТП / ГО). A single layout serves all three, with
+     bindCard showing and hiding the optional parts — the same idiom as item_maintenance_card, and
+     for the same reason: three near-identical layouts would drift apart on the first design change.
+
+     The icon chip is tinted from the categorical accent palette because the three cards really are
+     three different kinds of document. Amber and green are deliberately skipped: those are the
+     "due" and "ok" status colours, and a green chip beside a red "expired" pill would read as a
+     contradiction. -->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="12dp"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="?attr/colorOutlineVariant"
+    app:cardBackgroundColor="?attr/colorSurface">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="18dp">
+
+        <!-- Header: accent icon chip + title/source + status pill -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:id="@+id/cmpIcon"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_icon_chip"
+                android:padding="9dp"
+                android:contentDescription="@null" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/cmpTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:text="Винетка" />
+
+                <!-- Provenance. Load-bearing, not decoration: it is the only thing separating a
+                     figure the toll authority confirmed from a date the user typed in. -->
+                <TextView
+                    android:id="@+id/cmpSource"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="12sp"
+                    android:text="@string/cmp_src_official" />
+            </LinearLayout>
+
+            <!-- Tint and text colour are both set in code: white on the three status fills, and
+                 onSurfaceVariant on the neutral "no data" fill, where white would fail. -->
+            <TextView
+                android:id="@+id/cmpStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_status_pill"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:text="@string/cmp_st_valid" />
+        </LinearLayout>
+
+        <!-- Expiry date + how long that leaves -->
+        <TextView
+            android:id="@+id/cmpValueLabel"
+            style="@style/Label.Overline"
+            android:layout_marginTop="16dp"
+            android:text="@string/cmp_valid_to" />
+
+        <TextView
+            android:id="@+id/cmpValue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:text="18.08.2026" />
+
+        <TextView
+            android:id="@+id/cmpRelative"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:text="след 12 дни" />
+
+        <!-- Secondary facts, joined with " · " in code (vignette number, class, installment date,
+             when the check ran). One line keeps the card compact whatever the document carries. -->
+        <TextView
+            android:id="@+id/cmpDetails"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="13sp"
+            android:lineSpacingExtra="2dp"
+            android:visibility="gone"
+            android:text="№ 1234567890 · Категория 3" />
+
+        <!-- Renewal prompt. Shown only on a declared document that is due or already expired, and
+             it asks a question rather than announcing a state: at that moment the user is the only
+             one who knows whether the inspection actually happened, and a tap is a cheaper answer
+             than a date picker. Without this an expired card is a dead end — it stays red after the
+             user has renewed in real life, which teaches them to ignore the badge. -->
+        <LinearLayout
+            android:id="@+id/cmpRenewRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/cmpRenewQuestion"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="14sp"
+                android:text="@string/cmp_renew_q_inspection" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/cmpBtnRenew"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:icon="@drawable/ic_check"
+                app:iconSize="18dp"
+                android:text="@string/cmp_renew_year" />
+        </LinearLayout>
+
+        <!-- Actions. Either can be hidden; the row collapses when both are. -->
+        <LinearLayout
+            android:id="@+id/cmpActions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:layout_marginStart="-8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/cmpBtnPrimary"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:icon="@drawable/ic_calendar"
+                app:iconSize="18dp"
+                android:text="@string/cmp_set_date" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/cmpBtnSecondary"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:icon="@drawable/ic_open_in_new"
+                app:iconSize="18dp"
+                android:text="@string/cmp_check_official" />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

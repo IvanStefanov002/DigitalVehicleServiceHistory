@@ -38,6 +38,13 @@ dependencies {
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
+    implementation(libs.swiperefreshlayout)   // pull-to-refresh on the data screens
+    implementation(libs.work.runtime)         // periodic service-reminder notifications
+    implementation(libs.biometric)            // fingerprint/face gate on the saved session
+    // Reads the picked photo's EXIF Orientation so portrait shots aren't baked in sideways.
+    implementation(libs.exifinterface)
+    // QR encoding only — the pure-Java core, not zxing-android-embedded: nothing here scans codes.
+    implementation(libs.zxing.core)
     implementation("com.squareup.okhttp3:okhttp:5.3.2") // http requests
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
