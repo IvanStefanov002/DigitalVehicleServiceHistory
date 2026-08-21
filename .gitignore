@@ -50,3 +50,5 @@ google-services.json
 *.jks
 *.keystore
 keystore.properties
+CLAUDE.md
+docs/
