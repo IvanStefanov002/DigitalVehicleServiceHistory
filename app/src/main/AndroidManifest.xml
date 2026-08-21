@@ -7,8 +7,11 @@
     <!-- Service-due reminders. Runtime-requested on Android 13+; auto-granted below that. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- android:debuggable is deliberately NOT set here. The build system marks debug builds
+         debuggable on its own; hardcoding it also shipped it in the release APK, where it lets
+         anyone with adb attach to the running app and read its data directory — including the
+         stored Bearer token. -->
     <application
-        android:debuggable="true"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
