@@ -1,6 +1,5 @@
 package com.example.maintenanceapp.model;
 
-/** A serviceable type from the catalog (GET /maintenance/types) with its recommended interval. */
 public class MaintenanceType {
     public String name;
     public int defaultIntervalKm;   // 0 = no fixed interval

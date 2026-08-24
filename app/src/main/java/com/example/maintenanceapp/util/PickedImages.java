@@ -15,31 +15,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-/**
- * Turns a photo the user picked from the gallery into a bitmap that is the right way up and small
- * enough to upload.
- *
- * <p>Shared by the two pickers in the app — the vehicle photo on {@code AddVehicleActivity} and the
- * document photo on {@code AddMaintenanceActivity}. It exists as a util precisely because the EXIF
- * step below is the kind of thing that gets fixed in one screen and forgotten in the other.
- */
+/** supported formats: JPEG, PNG, WebP, GIF, HEIC */
 public final class PickedImages {
 
     private static final String TAG = "PickedImages";
 
     private PickedImages() { }
 
-    /**
-     * Decodes {@code uri} into a bitmap no larger than {@code maxDimen} on its longest side, rotated
-     * to match its EXIF orientation.
-     *
-     * <p><b>Downsamples while decoding.</b> A 12 MP phone photo is ~48 MB as {@code ARGB_8888}, so
-     * decoding it in full and only then scaling down — which is what this code used to do — risks an
-     * {@link OutOfMemoryError} before the scale ever runs. The bounds-only pass costs one cheap read
-     * and lets {@code inSampleSize} do most of the shrinking inside the decoder.
-     *
-     * @return the bitmap, or {@code null} if the image could not be decoded at all
-     */
+    /** Decodes URI into a bitmap no larger than MAXDIMEN on its longest side */
     @Nullable
     public static Bitmap decodeUpright(Context ctx, Uri uri, int maxDimen) throws IOException {
         BitmapFactory.Options bounds = new BitmapFactory.Options();
@@ -65,11 +48,6 @@ public final class PickedImages {
         return applyExifOrientation(ctx, uri, bitmap);
     }
 
-    /**
-     * Largest power-of-two subsample that still leaves the longest side at or above {@code maxDimen},
-     * so the follow-up exact scale never has to upscale. Returns 1 when the bounds are unknown
-     * ({@code outWidth} is -1 for an undecodable stream) — the decode below will fail cleanly instead.
-     */
     private static int sampleSize(int width, int height, int maxDimen) {
         int longest = Math.max(width, height);
         int sample = 1;
@@ -91,30 +69,7 @@ public final class PickedImages {
         return Bitmap.createScaledBitmap(src, Math.round(w * ratio), Math.round(h * ratio), true);
     }
 
-    /**
-     * Rotates/flips the bitmap to match the file's EXIF {@code Orientation} tag.
-     *
-     * <p><b>Why this is needed at all.</b> A phone camera doesn't rotate its sensor data — it stores a
-     * portrait shot as landscape pixels plus an {@code Orientation} tag saying "turn me 90°", and every
-     * gallery app honours it. {@link BitmapFactory} does not, so without this a portrait photo lands
-     * sideways while landscape ones (tag = 1, no rotation) look fine. That asymmetry is the symptom.
-     *
-     * <p><b>And why it has to be baked into the pixels.</b> Both callers re-encode before upload, to
-     * WebP/PNG or JPEG; the re-encode carries no EXIF, so the tag is gone by the time anything displays
-     * it. There is no "keep the metadata" option — either the rotation is in the pixel data or it is
-     * lost. This is also why the display-side helpers need no matching fix: everything downstream is
-     * decoding an already-upright image.
-     *
-     * <p>Reads EXIF from its own {@code openInputStream}: the decode's stream is already consumed, and
-     * a {@code ContentResolver} stream isn't reliably rewindable.
-     *
-     * <p>Uses AndroidX {@code ExifInterface} rather than the framework's, which can't read a stream
-     * before API 24 and covers fewer container formats. Handles the mirrored orientations too — rare
-     * (front cameras, some editors) but they arrive through the same tag.
-     *
-     * <p>Returns the input unchanged on any failure. A photo the right way up is worth having; a
-     * missing or unreadable tag is not worth failing the pick over.
-     */
+    /* EXIF orientation is a metadata tag that cameras write into JPEG files to record how the sensor was physically rotated when the photo was taken */
     public static Bitmap applyExifOrientation(Context ctx, Uri uri, Bitmap bitmap) {
         int orientation = ExifInterface.ORIENTATION_NORMAL;
         try (InputStream in = ctx.getContentResolver().openInputStream(uri)) {
@@ -164,10 +119,6 @@ public final class PickedImages {
         }
     }
 
-    /**
-     * Encodes losslessly — WebP on API 30+, PNG below. Used for the <b>vehicle</b> photo, where JPEG
-     * would flatten a transparent PNG onto a solid background.
-     */
     public static byte[] encodeLossless(Bitmap bitmap) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -178,12 +129,6 @@ public final class PickedImages {
         return out.toByteArray();
     }
 
-    /**
-     * Encodes as JPEG. Used for <b>document</b> photos, and the choice is deliberate: a photographed
-     * receipt has no transparency to preserve and is mostly flat paper, so JPEG lands a legible 2048px
-     * scan in a few hundred KB where lossless would be several MB. Legibility matters more than
-     * pixel-exactness here, and the upload is the largest request the app makes.
-     */
     public static byte[] encodeJpeg(Bitmap bitmap, int quality) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, quality, out);
