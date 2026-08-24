@@ -19,10 +19,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-/**
- * Renders the service-type catalog as a 2-column grid on the Поддръжка tab. Each card shows the
- * type name and expands on tap to reveal its recommended interval.
- */
+/** used in tab "Поддръжка" to show different cards for maintenance types and their intervals */
 public class MaintenanceTypeAdapter extends RecyclerView.Adapter<MaintenanceTypeAdapter.ViewHolder> {
 
     private final List<MaintenanceType> items = new ArrayList<>();
@@ -67,9 +64,7 @@ public class MaintenanceTypeAdapter extends RecyclerView.Adapter<MaintenanceType
         holder.txtWarning.setText(hasWarning ? type.description.trim() : "");
         holder.warning.setVisibility(hasWarning && warningShown.contains(position) ? View.VISIBLE : View.GONE);
 
-        // Full re-layout on toggle: GridLayoutManager caches row heights and a single
-        // notifyItemChanged grows a card but won't shrink the row back on collapse.
-        // notifyDataSetChanged forces every row to re-measure (the catalog is tiny).
+        // re-layout on toggle of single card
         holder.itemView.setOnClickListener(v -> {
             int pos = holder.getAdapterPosition();
             if (pos == RecyclerView.NO_POSITION) return;
@@ -86,13 +81,9 @@ public class MaintenanceTypeAdapter extends RecyclerView.Adapter<MaintenanceType
     }
 
     @Override
-    public int getItemCount() {
-        return items.size();
-    }
+    public int getItemCount() { return items.size(); }
 
-    private static String formatKm(int km) {
-        return String.format(Locale.US, "%,d", km).replace(',', ' ') + " км";
-    }
+    private static String formatKm( int km ) { return String.format(Locale.US, "%,d", km).replace(',', ' ') + " км"; }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
         final TextView txtName, txtInterval, txtWarning;

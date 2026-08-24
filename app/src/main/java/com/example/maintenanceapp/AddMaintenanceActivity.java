@@ -45,30 +45,22 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 
-/** Form for logging a service record: pick vehicle + type, enter mileage/cost/date/notes, POST it. */
 public class AddMaintenanceActivity extends AppCompatActivity {
 
     public static final String EXTRA_VEHICLES = "extra_vehicles";
 
-    // API endpoint used to retrieve( GET ) available maintenance types;
+    /** API endpoint used to retrieve( GET ) available maintenance types; */
     private static final String TYPES_URL = "http://92.5.55.85:27778/maintenance/types";
 
-    // API endpoint used to insert/add maintenance record to a vehicle;
+    /** API endpoint used to insert/add maintenance record to a vehicle; */
     private static final String ADD_URL = "http://92.5.55.85:27778/vehicles/maintenance/add";
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
-    /**
-     * Cap on the document photo's longest side. Larger than the 1024 px used for vehicle photos
-     * because this one has to stay <em>legible</em> — the point of keeping a receipt is reading its
-     * line items later, and 1024 px turns 8 pt print into mush.
-     */
     private static final int MAX_DOC_DIMEN = 2048;
 
     /** JPEG quality for the document. 85 is visually clean on flat paper and roughly halves the size. */
     private static final int DOC_JPEG_QUALITY = 85;
-
-    // Shown until GET /maintenance/types responds (or if it fails). The server catalog is the
-    // source of truth; keep these names in sync with it.
+    
     private static final String[] FALLBACK_TYPES = {
             "Смяна на масло и филтър",
             "Въздушен и кабинен филтър",
