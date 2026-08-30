@@ -1,11 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  Поддръжка tab. Inflated into MainActivity's #contentContainer (see showMaintenance()).
-
-  Content is unchanged: screen title, intro text, the service-type catalog grid (#typesRecycler,
-  a GridLayoutManager(2) of item_maintenance_type) and the add-record FAB. This is a visual pass
-  only — the ids MainActivity looks up are #typesRecycler, #typesProgress and #fabAddMaintenance.
--->
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -18,7 +11,6 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- Header -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -37,8 +29,6 @@
                 android:textStyle="bold"
                 android:letterSpacing="-0.015" />
 
-            <!-- Intro sits in its own tonal container with a leading icon, so the explanatory copy
-                 reads as a distinct hint block instead of loose text on an empty background. -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -79,10 +69,6 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Entry point for the oil advisor (OilRecommendationActivity). A tappable row rather
-                 than a second FAB: the tab already has one for the primary action, and this is a
-                 lookup, not a write. Accent 3 — accent 1/2 head the two sections of the add-service
-                 form, and amber/green are the status colours. -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardOilAdvisor"
                 android:layout_width="match_parent"
@@ -147,8 +133,6 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Section header: label + a rule that fills the remaining width, so the grid below
-                 reads as a labelled group instead of a loose pile of cards. -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -174,8 +158,6 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Pull-to-refresh here bypasses the session cache and refetches the catalog (see
-             MainActivity.refreshMaintenanceTypes). -->
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/maintSwipe"
             android:layout_width="match_parent"
@@ -208,7 +190,6 @@
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
     </LinearLayout>
 
-    <!-- Primary (not primary-container) so the accent reads as the one call to action here. -->
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fabAddMaintenance"
         android:layout_width="wrap_content"
@@ -221,5 +202,4 @@
         app:backgroundTint="?attr/colorPrimary"
         app:icon="@drawable/ic_add"
         app:iconTint="?attr/colorOnPrimary" />
-
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

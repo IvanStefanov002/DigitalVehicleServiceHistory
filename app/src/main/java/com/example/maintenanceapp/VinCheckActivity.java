@@ -7,6 +7,7 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
+import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -26,6 +27,7 @@ import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.Nullable;
+import androidx.annotation.RawRes;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.maintenanceapp.util.ScreenInsets;
@@ -35,6 +37,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -45,42 +51,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-/**
- * Assisted document check: hosts an official captcha-gated check page in a WebView so the user solves
- * the challenge themselves, then reads the resulting date out of the rendered page and offers it back.
- *
- * <p>Site-agnostic on purpose — the caller passes the URL, the host to inject on, the value to
- * prefill/copy, the CSS selectors for the field, and the screen's labels. <b>Only the ГТП check
- * (RTA, an Angular SPA with a Google reCAPTCHA) uses it.</b> ГО used to as well, but the Guarantee
- * Fund's page loaded only intermittently in a WebView and now opens in the browser instead — see
- * {@code VehicleComplianceActivity.openInsuranceCheck()} before reusing this for another site, and
- * assume nothing about a page working here just because RTA's does.
- *
- * <p><b>Why a WebView and not a background fetch.</b> The page sits behind a captcha, and the only
- * honest way past a captcha is a human. RTA's own page makes the request with a real, user-solved
- * challenge; this screen never sees, forges, or reuses that token. It merely reads the date the page
- * has already rendered.
- *
- * <p><b>Nothing is saved silently.</b> Scraping a third party's DOM is brittle, so a detected date is
- * only <em>offered</em> — the user confirms it against what is on screen, and the caller persists it.
- * If the DOM changes and nothing is found, the result bar never appears and the user falls back to
- * reading the date and using "+1 година" or the picker. Failure mode is "no help", never "wrong date".
- *
- * <p>Returns {@link #EXTRA_RESULT_DATE} ({@code yyyy-MM-dd}) with {@code RESULT_OK} on confirmation.
- */
 public class VinCheckActivity extends AppCompatActivity {
 
     private static final String TAG = "VinCheck";
-
-    public static final String EXTRA_URL = "extra_url";                 // the check page
-    public static final String EXTRA_ALLOWED_HOST = "extra_allowed_host"; // host to inject on
-    public static final String EXTRA_FILL_VALUE = "extra_fill_value";   // VIN or plate to prefill/copy
-    public static final String EXTRA_FILL_SELECTORS = "extra_fill_selectors"; // String[] of CSS selectors
-    public static final String EXTRA_TITLE = "extra_title";             // screen title (resolved)
-    public static final String EXTRA_HINT = "extra_hint";               // hint strip text (resolved)
-    public static final String EXTRA_RESULT_DATE = "extra_result_date"; // output, yyyy-MM-dd
-
-    /** A load that hasn't finished by now gets the retry bar. Not a cancel — the load continues. */
+    public static final String EXTRA_URL = "extra_url";
+    public static final String EXTRA_ALLOWED_HOST = "extra_allowed_host";
+    public static final String EXTRA_FILL_VALUE = "extra_fill_value";
+    public static final String EXTRA_FILL_SELECTORS = "extra_fill_selectors";
+    public static final String EXTRA_TITLE = "extra_title";
+    public static final String EXTRA_HINT = "extra_hint";
+    public static final String EXTRA_RESULT_DATE = "extra_result_date";
     private static final long LOAD_TIMEOUT_MS = 20_000L;
 
     private WebView web;
@@ -125,14 +105,10 @@ public class VinCheckActivity extends AppCompatActivity {
             return;
         }
 
-        // chrome://inspect on a debug build. This whole class of bug ("sometimes the page just doesn't
-        // come up") is only diagnosable with the page's own console and network log.
         if ((getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
             WebView.setWebContentsDebuggingEnabled(true);
         }
 
-        // Put the value on the clipboard up front: the JS prefill is best-effort (a site's field ids
-        // can change), and a paste is the reliable fallback the user always has.
         if (fillValue != null && !fillValue.trim().isEmpty()) {
             String v = fillValue.trim();
             ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
@@ -141,8 +117,6 @@ public class VinCheckActivity extends AppCompatActivity {
             }
         }
 
-        // The layout's title is static ("Проверка на документ" isn't specific enough), so the caller
-        // passes a resolved title/hint per document. Title lands on #vcTitle, hint on #vcHint.
         String title = getIntent().getStringExtra(EXTRA_TITLE);
         if (title != null) {
             ((TextView) findViewById(R.id.vcTitle)).setText(title);
@@ -164,40 +138,27 @@ public class VinCheckActivity extends AppCompatActivity {
         ProgressBar progress = findViewById(R.id.vcProgress);
 
         web = findViewById(R.id.vcWeb);
-        // Paint white immediately. The WebView's surface is black until the page first paints, and on
-        // a heavy server-rendered page (the Guarantee Fund) that gap reads as a "black screen"; a
-        // white background bridges it and matches every real page we load.
         web.setBackgroundColor(android.graphics.Color.WHITE);
 
         WebSettings ws = web.getSettings();
-        ws.setJavaScriptEnabled(true);       // SPA + ALTCHA both need JS; nothing renders without it
+        ws.setJavaScriptEnabled(true);
         ws.setDomStorageEnabled(true);
         ws.setLoadWithOverviewMode(true);
         ws.setUseWideViewPort(true);
         ws.setSupportZoom(true);
         ws.setBuiltInZoomControls(true);
         ws.setDisplayZoomControls(false);
-        // Some CMS pages pull a subresource over http on an https page; the default WebView blocks
-        // that outright, which can leave the page half-rendered. Compatibility mode allows it for
-        // images/styles while still blocking active mixed content.
         ws.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
-        // The "; wv" UA strip is ONLY for Google reCAPTCHA (RTA), which refuses to run under the
-        // WebView token. The host guard stays even though RTA is the only caller left: the strip once
-        // gave the Guarantee Fund a black screen (an unusual UA can trip a CMS/WAF), so it must never
-        // be applied blindly to whatever page is wired up next.
         if (allowedHost.contains("rta.government.bg")) {
             ws.setUserAgentString(ws.getUserAgentString().replace("; wv", ""));
         }
 
-        // A WebChromeClient makes the WebView a "full" browser environment — some pages don't lay out
-        // correctly without one, and it drives the progress bar.
         web.setWebChromeClient(new android.webkit.WebChromeClient() {
             @Override
             public void onProgressChanged(WebView view, int newProgress) {
                 progress.setProgress(newProgress);
             }
 
-            /** The page's own JS errors, in logcat. This is how the ALTCHA init race was identified. */
             @Override
             public boolean onConsoleMessage(ConsoleMessage m) {
                 Log.d(TAG, "console: " + m.message() + " @" + m.sourceId() + ":" + m.lineNumber());
@@ -223,11 +184,6 @@ public class VinCheckActivity extends AppCompatActivity {
                 return true;
             }
 
-            /**
-             * A failed main-frame load used to be indistinguishable from a slow one: both were a blank
-             * WebView with no way out but Back. Subframe errors are ignored — a dead tracker iframe is
-             * not a failed page.
-             */
             @Override
             public void onReceivedError(WebView view, WebResourceRequest request,
                                         WebResourceError error) {
@@ -251,8 +207,6 @@ public class VinCheckActivity extends AppCompatActivity {
                 progress.setVisibility(View.GONE);
                 ui.removeCallbacks(loadWatchdog);
                 hideErrorBar();
-                // Only ever inject on the caller's own origin — never a captcha frame or a redirect
-                // target. The Fund's POST reloads the page, so this re-runs on the result page too.
                 if (isAllowed(u)) {
                     view.evaluateJavascript(injectedScript(fillValue, selectorsJson), null);
                 }
@@ -290,11 +244,6 @@ public class VinCheckActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Reloads the original URL rather than calling {@link WebView#reload()}: the Fund's search is a
-     * POST, so a reload from a result page would re-submit it, where what the user wants after a
-     * failed load is the clean form back.
-     */
     private void reload() {
         hideErrorBar();
         candidates.clear();
@@ -310,14 +259,7 @@ public class VinCheckActivity extends AppCompatActivity {
         }
     }
 
-    // ---- JS bridge -----------------------------------------------------------
-
     private final class Bridge {
-        /**
-         * Called from the injected script with a JSON array of {@code {date, label}} scraped from the
-         * rendered result. Runs on a binder thread → hops to the UI thread. Untrusted by construction
-         * (any frame's JS could call it), which is exactly why the result is confirmed, never saved.
-         */
         @JavascriptInterface
         public void onDatesFound(String json) {
             final List<Candidate> parsed = parseCandidates(json);
@@ -335,11 +277,6 @@ public class VinCheckActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Parses the scraped list into confirmed candidates. Only strings that parse as {@code dd.MM.yyyy}
-     * are kept; candidates whose label hints at an expiry ("валид", "до", "след", "преглед") float to
-     * the top so the pre-selected choice is the useful one.
-     */
     private List<Candidate> parseCandidates(String json) {
         List<Candidate> primary = new ArrayList<>();
         List<Candidate> secondary = new ArrayList<>();
@@ -387,7 +324,6 @@ public class VinCheckActivity extends AppCompatActivity {
         return primary;
     }
 
-    /** One candidate → return immediately; several → let the user pick, pre-selecting the first. */
     private void chooseAndReturn() {
         if (candidates.isEmpty()) {
             return;
@@ -418,45 +354,40 @@ public class VinCheckActivity extends AppCompatActivity {
     }
 
     /**
-     * The script injected into the check page. It (1) prefills the field found by {@code selectorsJson}
-     * with {@code fillValue}, retrying because a field may mount asynchronously (Angular) or after a
-     * reload (the Fund's POST), and (2) watches the DOM and reports any {@code dd.MM.yyyy} dates it
-     * finds in small (leaf-ish) elements, with the surrounding text as a label. Binds once per page
-     * and never throws into the host page.
+     * The page script, read from {@code res/raw/vin_check.js} with its two placeholders filled in.
      *
-     * <p>{@code selectorsJson} is a JSON array, which is also a valid JS array literal, so it drops
-     * straight in.
+     * <p>It lives in a real .js file rather than a Java string so the regexes aren't double-escaped
+     * and an editor can highlight it — this is the most brittle code in the app and it has to stay
+     * readable. Read the header comment in that file before changing any of it.
+     *
+     * <p>Returns an empty string if the resource can't be read, which evaluates to a no-op: the
+     * user then fills the field by hand, which is the same fallback every other failure here has.
      */
-    private static String injectedScript(@Nullable String value, String selectorsJson) {
-        String safe = value == null ? "" : value.trim().replace("\\", "\\\\").replace("'", "\\'");
-        return "(function(){"
-                + "if(window.__mvBound)return;window.__mvBound=true;"
-                + "var VAL='" + safe + "';var SELS=" + selectorsJson + ";"
-                + "function setVal(el,val){try{var p=Object.getPrototypeOf(el);"
-                + "var d=Object.getOwnPropertyDescriptor(p,'value');"
-                + "if(d&&d.set){d.set.call(el,val);}else{el.value=val;}"
-                + "['input','change','keyup','blur'].forEach(function(t){"
-                + "el.dispatchEvent(new Event(t,{bubbles:true}));});}catch(e){}}"
-                + "function findField(){for(var i=0;i<SELS.length;i++){"
-                + "var el=document.querySelector(SELS[i]);if(el)return el;}"
-                + "var ins=document.querySelectorAll('input[type=\"text\"],input:not([type])');"
-                + "for(var j=0;j<ins.length;j++){if(ins[j].offsetParent!==null)return ins[j];}return null;}"
-                + "var n=0;var t=setInterval(function(){n++;var el=findField();"
-                + "if(el&&VAL){setVal(el,VAL);clearInterval(t);}if(n>40)clearInterval(t);},250);"
-                + "var re=/\\b\\d{2}\\.\\d{2}\\.\\d{4}\\b/;var last='';"
-                + "function scan(){try{"
-                + "var els=document.querySelectorAll('td,th,li,p,span,div,strong,b,label');"
-                + "var out=[],seen={};"
-                + "for(var i=0;i<els.length;i++){var el=els[i];var tx=(el.textContent||'').trim();"
-                + "if(!tx||tx.length>120)continue;var m=tx.match(re);if(!m)continue;"
-                + "var lab=tx.replace(m[0],'').replace(/[\\s:\\-–]+$/,'').trim().slice(0,60);"
-                + "var k=m[0]+'|'+lab;if(seen[k])continue;seen[k]=1;out.push({date:m[0],label:lab});}"
-                + "if(out.length){var pl=JSON.stringify(out);if(pl!==last){last=pl;"
-                + "if(window.MvBridge&&MvBridge.onDatesFound)MvBridge.onDatesFound(pl);}}}catch(e){}}"
-                + "try{var mo=new MutationObserver(function(){scan();});"
-                + "mo.observe(document.body,{childList:true,subtree:true,characterData:true});}catch(e){}"
-                + "scan();"
-                + "})();";
+    private String injectedScript(@Nullable String value, String selectorsJson) {
+        String js = readRaw(R.raw.vin_check);
+        if (js.isEmpty()) {
+            return "";
+        }
+        // JSONObject.quote emits the surrounding quotes and escapes the contents, so the VIN can't
+        // break out of its literal no matter what the caller passed.
+        String literal = JSONObject.quote(value == null ? "" : value.trim());
+        return js.replace("__MV_VALUE__", literal)
+                .replace("__MV_SELECTORS__", selectorsJson);
+    }
+
+    private String readRaw(@RawRes int res) {
+        try (InputStream in = getResources().openRawResource(res)) {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            byte[] buf = new byte[8192];
+            int read;
+            while ((read = in.read(buf)) != -1) {
+                out.write(buf, 0, read);
+            }
+            return out.toString(StandardCharsets.UTF_8.name());
+        } catch (IOException | Resources.NotFoundException e) {
+            Log.w(TAG, "could not read injected script", e);
+            return "";
+        }
     }
 
     @Override

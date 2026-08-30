@@ -1,11 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  One OEM approval / ACEA class, inflated into #chipSpecs by OilRecommendationActivity.
-
-  A Chip (not a TextView on bg_status_pill) because these are the load-bearing part of the
-  recommendation and there can be five of them: ChipGroup already reflows them onto as many rows as
-  they need, which a LinearLayout would not.
--->
 <com.google.android.material.chip.Chip
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"

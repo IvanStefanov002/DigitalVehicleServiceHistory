@@ -1,13 +1,2 @@
 <resources>
-    <!--
-      Intentionally empty.
-
-      The dark theme is NOT defined here. values/themes.xml is the single theme definition for both
-      modes; it maps the Material 3 roles to @color/scheme_* names, and values-night/colors.xml
-      supplies the dark values for those same names. Redefining Base.Theme.MaintenanceApp in this
-      file would REPLACE the light definition wholesale (styles don't merge across resource
-      qualifiers), so the whole mapping would have to be kept in sync by hand.
-
-      To change dark colors, edit values-night/colors.xml.
-    -->
 </resources>

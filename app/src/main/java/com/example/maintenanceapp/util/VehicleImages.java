@@ -28,11 +28,22 @@ public final class VehicleImages {
     public static void apply(Context ctx, ImageView target, String base64, String name,
                              String cacheKey, VehicleType type) {
         Bitmap bitmap = decode(base64, cacheKey);
+        if (bitmap == null && (base64 == null || base64.isEmpty())) {
+            bitmap = cached(cacheKey);
+        }
         if (bitmap != null) {
             target.setImageBitmap(bitmap);
         } else {
             target.setImageResource(resolve(ctx, name, type));
         }
+    }
+
+    public static Bitmap cached(String cacheKey) {
+        if (cacheKey == null) {
+            return null;
+        }
+        Bitmap bitmap = CACHE.get(cacheKey);
+        return bitmap != null && !bitmap.isRecycled() ? bitmap : null;
     }
 
     public static void evict(String cacheKey) {

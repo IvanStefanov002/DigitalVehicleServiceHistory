@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- #shRoot is padded for the system bars in ShareHistoryActivity.onCreate. -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/shRoot"
@@ -14,7 +13,6 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Header -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -64,8 +62,6 @@
             android:orientation="vertical"
             android:visibility="gone">
 
-            <!-- The QR sits on a hardcoded white card in both themes. Scanners expect a dark code
-                 on a light quiet zone; a tonal surface behind it hurts the read. -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -138,7 +134,6 @@
                     android:text="@string/share_send" />
             </LinearLayout>
 
-            <!-- Destructive, so it carries colorError like the delete button on the detail screen. -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnRevoke"
                 style="@style/Widget.Material3.Button.TextButton"

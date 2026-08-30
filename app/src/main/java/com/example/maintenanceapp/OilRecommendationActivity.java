@@ -15,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.maintenanceapp.model.EngineOption;
 import com.example.maintenanceapp.model.OilRecommendation;
 import com.example.maintenanceapp.model.Vehicle;
+import com.example.maintenanceapp.util.Api;
 import com.example.maintenanceapp.util.ApiClient;
 import com.example.maintenanceapp.util.ScreenInsets;
 import com.example.maintenanceapp.util.VehicleType;
@@ -45,81 +46,34 @@ import okhttp3.Response;
 
 /**
  * Oil advisor: pick a vehicle + engine code, get the viscosity grade and the OEM approvals the
- * engine requires. Opened from the Поддръжка tab.
- *
- * <p><b>Read-only by design.</b> Nothing on this screen writes to the server — it asks a question
- * and renders the answer — so there is no save button, no {@code RESULT_OK} contract and no
- * pull-to-refresh (asking again is one tap on {@link #btnRecommend}).
- *
- * <p><b>Why the engine code and not make/model/year.</b> One model year of one model ships several
- * engines with genuinely different oil requirements — a Golf VI is 1.4 TSI *and* 2.0 TDI — and the
- * requirement follows the engine, not the badge. So the lookup key is the manufacturer engine code
- * ({@code EA288}, {@code M57}, {@code ARL}) plus the fuel type, and the vehicle picker exists to
- * prefill the fuel and to remember the choice, not to identify the engine.
- *
- * <p><b>The engine field stays typeable.</b> The catalog is a convenience: it seeds the dropdown and
- * floats the engines fitted to the selected vehicle's make to the top, but a code that isn't in the
- * table yet — or a catalog fetch that failed — must still be sendable, so the field is an editable
- * autocomplete and a failed fetch only raises a hint, never disables the form.
- *
- * <p><b>The chosen engine is remembered per vehicle</b> in the {@code "oil"} prefs (not {@code
- * "auth"}, which logout clears). This is a client-side stand-in: the eventual home for it is an
- * {@code engineCode} column on the vehicle, at which point it rides along on {@code GET /vehicles}
- * and this cache can go.
- */
+ * engine requires. Opened from the Поддръжка tab. */
 public class OilRecommendationActivity extends AppCompatActivity {
 
     public static final String EXTRA_VEHICLES = "extra_vehicles";
 
-    // Engine catalog for the dropdown.
-    private static final String ENGINES_URL = "http://92.5.55.85:27778/oil/engines";
 
-    // The recommendation itself, keyed by engine code + fuel type.
-    private static final String RECOMMEND_URL = "http://92.5.55.85:27778/oil/recommend";
-
-    /** Same retry budget the other idempotent GETs use — the server truncates responses. */
     private static final int OIL_MAX_ATTEMPTS = 3;
-
-    /** Remembered engine per vehicle. Separate file from {@code "auth"}, which logout wipes. */
     private static final String PREFS = "oil";
     private static final String KEY_ENGINE_PREFIX = "engine_";
 
-    /**
-     * Fuel labels shown to the user, paired positionally with {@link #FUEL_VALUES} — the vocabulary
-     * the API is keyed on. Kept as two arrays rather than one map so the dropdown order is fixed
-     * (diesel first: it is the majority of the Bulgarian car park).
-     */
+    /** Fuel labels shown to the user */
     private static final String[] FUEL_LABELS = {"Дизел", "Бензин", "Газ (LPG)"};
     private static final String[] FUEL_VALUES = {"diesel", "petrol", "lpg"};
 
     private OkHttpClient client;
-
     private List<Vehicle> vehicles = new ArrayList<>();
     private final List<EngineOption> engines = new ArrayList<>();
-
-    /**
-     * Label → engine, for resolving what the user picked. Not an index into {@link #engines}: the
-     * autocomplete filters as the user types, so a click position refers to the *filtered* adapter,
-     * not to our list.
-     */
     private final Map<String, EngineOption> enginesByLabel = new LinkedHashMap<>();
-
-    /** Index into {@link #vehicles}; the autocomplete has no getSelectedItemPosition(). */
     private int selectedVehicleIndex = -1;
-
+    private TextView txtResultEngine, txtViscosity, txtAlt, txtCapacity, txtInterval, txtNote, productsLabel, error;
     private MaterialAutoCompleteTextView ddVehicle, ddEngine, ddFuel;
+    private MaterialCardView cardResult;
+    private MaterialButton btnRecommend;
     private TextInputLayout tilEngine;
     private View enginesError;
-    private MaterialButton btnRecommend;
     private ProgressBar progress;
-    private TextView error;
-
-    private MaterialCardView cardResult;
-    private TextView txtResultEngine, txtViscosity, txtAlt, txtCapacity, txtInterval, txtNote, productsLabel;
     private ChipGroup chipSpecs;
     private LinearLayout rowAlt, rowCapacity, rowInterval, productsContainer;
-
-    /** Guards against a second request while one is in flight (and re-enables the button). */
     private boolean requestInFlight;
 
     @Override
@@ -133,9 +87,6 @@ public class OilRecommendationActivity extends AppCompatActivity {
 
         Object extra = getIntent().getSerializableExtra(EXTRA_VEHICLES);
         if (extra instanceof List) {
-            // Cars only, filtered again here rather than trusted from the caller: this screen can
-            // only ever give a car's oil spec (see VehicleType.supportsOilAdvisor), so letting a
-            // motorcycle into the picker would put a confidently wrong answer one tap away.
             List<Vehicle> passed = (List<Vehicle>) extra;
             List<Vehicle> cars = new ArrayList<>();
             for (Vehicle v : passed) {
@@ -180,9 +131,6 @@ public class OilRecommendationActivity extends AppCompatActivity {
         }
         ddVehicle.setSimpleItems(vehicleLabels);
         ddVehicle.setOnItemClickListener((parent, view, pos, id) -> selectVehicle(pos));
-
-        // An engine picked from the list wipes any stale answer on screen: the result below would
-        // otherwise still describe the previous engine while the field says something else.
         ddEngine.setOnItemClickListener((parent, view, pos, id) -> {
             tilEngine.setError(null);
             hideResult();
@@ -198,9 +146,6 @@ public class OilRecommendationActivity extends AppCompatActivity {
         if (!vehicles.isEmpty()) {
             selectVehicle(0);
         } else {
-            // Nothing to advise on. Say why rather than showing a form that can't work — and say
-            // which "why", since an empty picker here can mean either no vehicles at all or no cars
-            // among them, and the second needs the car-only rule spelled out.
             btnRecommend.setEnabled(false);
             showError(getString(extra instanceof List && !((List<?>) extra).isEmpty()
                     ? R.string.oil_no_cars
@@ -210,8 +155,6 @@ public class OilRecommendationActivity extends AppCompatActivity {
         fetchEngines(1);
     }
 
-    // ---- vehicle -------------------------------------------------------------------------------
-
     private String vehicleLabel(Vehicle v) {
         String name = ((v.make == null ? "" : v.make) + " " + (v.model == null ? "" : v.model)).trim();
         if (v.licensePlate != null && !v.licensePlate.isEmpty()) {
@@ -220,10 +163,6 @@ public class OilRecommendationActivity extends AppCompatActivity {
         return name.isEmpty() ? "—" : name;
     }
 
-    /**
-     * Selects a vehicle: reflects it in the dropdown, prefills the fuel type from the vehicle,
-     * re-orders the engine list around its make and restores the engine remembered for it.
-     */
     private void selectVehicle(int pos) {
         if (pos < 0 || pos >= vehicles.size()) {
             return;
@@ -232,27 +171,15 @@ public class OilRecommendationActivity extends AppCompatActivity {
         Vehicle v = vehicles.get(pos);
         ddVehicle.setText(vehicleLabel(v), false);   // false = don't re-filter
 
-        // Cleared first: applyFuelFor may raise the "electric vehicles have no engine oil" message,
-        // and hideResult() clears the error area — doing it after would wipe what was just shown.
         hideResult();
         applyFuelFor(v);
         applyEngineItems();
-
-        // The previous choice for *this* vehicle, so a returning user doesn't retype a code they
-        // already looked up once.
         String remembered = getSharedPreferences(PREFS, MODE_PRIVATE)
                 .getString(KEY_ENGINE_PREFIX + (v.id == null ? "" : v.id), "");
         ddEngine.setText(remembered, false);
         tilEngine.setError(null);
     }
 
-    /**
-     * Prefills the fuel dropdown from the vehicle's own {@code fuelType}, which is stored in the
-     * English vocabulary of {@code R.array.fuel_types}.
-     *
-     * <p>An electric vehicle has no engine oil at all, so the form is disabled and says so — asking
-     * the server for a recommendation that cannot exist would come back empty and read as a bug.
-     */
     private void applyFuelFor(Vehicle v) {
         String fuel = v.fuelType == null ? "" : v.fuelType.trim().toLowerCase(Locale.ROOT);
 
@@ -276,7 +203,6 @@ public class OilRecommendationActivity extends AppCompatActivity {
         ddFuel.setText(FUEL_LABELS[index], false);
     }
 
-    /** The API's fuel value for whatever the fuel dropdown currently shows. */
     private String selectedFuelValue() {
         String label = ddFuel.getText() == null ? "" : ddFuel.getText().toString();
         for (int i = 0; i < FUEL_LABELS.length; i++) {
@@ -287,14 +213,9 @@ public class OilRecommendationActivity extends AppCompatActivity {
         return "";
     }
 
-    // ---- engine catalog ------------------------------------------------------------------------
-
-    /**
-     * Loads the engine catalog. Retried like the other idempotent GETs; on final failure the hint
-     * bar appears and the field is left usable — a hand-typed code works without this list.
-     */
+    /** Loads the engine catalog. */
     private void fetchEngines(int attempt) {
-        Request request = new Request.Builder().url(ENGINES_URL).get().build();
+        Request request = new Request.Builder().url(Api.OIL_ENGINES).get().build();
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
@@ -325,9 +246,6 @@ public class OilRecommendationActivity extends AppCompatActivity {
                     Log.e("Oil", "engines parse failed (attempt " + attempt + ")", e);
                 }
 
-                // An empty catalog is not a failure to retry — the table is simply unseeded. Unlike
-                // the maintenance types there is no hardcoded fallback here: an oil approval the app
-                // invented would be indistinguishable from one the catalog vouches for.
                 if (!ok) {
                     retryOrGiveUp(attempt);
                     return;
@@ -351,11 +269,6 @@ public class OilRecommendationActivity extends AppCompatActivity {
         runOnUiThread(() -> enginesError.setVisibility(View.VISIBLE));
     }
 
-    /**
-     * Fills the engine dropdown, with the engines fitted to the selected vehicle's make first. The
-     * catalog is one flat list of every engine in the table, and scrolling past twenty codes to find
-     * your own is the difference between a useful picker and a wall of strings.
-     */
     private void applyEngineItems() {
         if (ddEngine == null) {
             return;
@@ -379,17 +292,12 @@ public class OilRecommendationActivity extends AppCompatActivity {
             enginesByLabel.put(labels[i], ordered.get(i));
         }
 
-        // setSimpleItems replaces the adapter, which clears the text — put it back, or re-ordering
-        // the list after a vehicle change would silently wipe what the user had typed.
         String typed = ddEngine.getText() == null ? "" : ddEngine.getText().toString();
         ddEngine.setSimpleItems(labels);
         ddEngine.setText(typed, false);
     }
 
-    /**
-     * The engine code to send. Accepts either a picked label ({@code "2.0 TDI (EA288)"}) or a
-     * hand-typed code, so the field works with or without the catalog.
-     */
+    /** The engine code to send. */
     private String engineCodeToSend() {
         String text = ddEngine.getText() == null ? "" : ddEngine.getText().toString().trim();
         if (text.isEmpty()) {
@@ -399,8 +307,7 @@ public class OilRecommendationActivity extends AppCompatActivity {
         if (picked != null) {
             return picked.code;
         }
-        // Typed by hand — or a label pasted in. Pull the code out of the trailing parentheses when
-        // there are any, otherwise take the text as the code.
+
         int open = text.lastIndexOf('(');
         int close = text.lastIndexOf(')');
         if (open >= 0 && close > open) {
@@ -412,8 +319,7 @@ public class OilRecommendationActivity extends AppCompatActivity {
         return text.toUpperCase(Locale.US);
     }
 
-    // ---- the recommendation --------------------------------------------------------------------
-
+    /* recommend motor oil. */
     private void recommend() {
         if (requestInFlight) {
             return;
@@ -430,7 +336,7 @@ public class OilRecommendationActivity extends AppCompatActivity {
                 ? vehicles.get(selectedVehicleIndex)
                 : null;
 
-        HttpUrl base = HttpUrl.parse(RECOMMEND_URL);
+        HttpUrl base = HttpUrl.parse(Api.OIL_RECOMMEND);
         if (base == null) {
             showError(getString(R.string.oil_error));
             return;
@@ -438,8 +344,7 @@ public class OilRecommendationActivity extends AppCompatActivity {
         HttpUrl.Builder url = base.newBuilder()
                 .addQueryParameter("engineCode", code)
                 .addQueryParameter("fuelType", selectedFuelValue());
-        // Mileage lets the catalog offer a high-mileage grade; it is advisory, so it is simply left
-        // out when the vehicle has no odometer reading rather than sent as a 0.
+
         if (vehicle != null && vehicle.mileage > 0) {
             url.addQueryParameter("mileage", String.valueOf(vehicle.mileage));
         }
@@ -473,8 +378,6 @@ public class OilRecommendationActivity extends AppCompatActivity {
                 boolean transportFailure = false;
                 try (Response r = response) {
                     if (r.code() == 404) {
-                        // A real answer: the catalog doesn't know this engine yet. Not retried —
-                        // asking three times cannot add a row to the table.
                         notFound = true;
                     } else if (r.isSuccessful() && r.body() != null) {
                         parsed = OilRecommendation.fromJson(new JSONObject(r.body().string()));
@@ -483,7 +386,6 @@ public class OilRecommendationActivity extends AppCompatActivity {
                         transportFailure = true;
                     }
                 } catch (IOException | JSONException e) {
-                    // A truncated body lands here — worth another attempt, same as the other GETs.
                     Log.e("Oil", "recommendation parse failed (attempt " + attempt + ")", e);
                     transportFailure = true;
                 }
@@ -501,8 +403,7 @@ public class OilRecommendationActivity extends AppCompatActivity {
                         showError(getString(R.string.oil_not_found));
                         return;
                     }
-                    // An empty/unusable payload is treated as "no data for this engine", never
-                    // rendered as a card with blank fields.
+
                     if (result == null || !result.isUsable()) {
                         showError(getString(result == null ? R.string.oil_error : R.string.oil_not_found));
                         return;
@@ -532,8 +433,6 @@ public class OilRecommendationActivity extends AppCompatActivity {
         }
         chipSpecs.setVisibility(r.specs.isEmpty() ? View.GONE : View.VISIBLE);
 
-        // Negative capacity / zero interval mean "not recorded" — hide the row rather than print a
-        // guess, the same way a maintenance record with no cost prints no price line.
         if (r.capacityLiters > 0) {
             rowCapacity.setVisibility(View.VISIBLE);
             txtCapacity.setText(getString(R.string.oil_capacity_value, formatLiters(r.capacityLiters)));
@@ -572,8 +471,6 @@ public class OilRecommendationActivity extends AppCompatActivity {
 
         cardResult.setVisibility(View.VISIBLE);
 
-        // Remembered only now, on an answer the catalog actually recognised — so a typo the server
-        // rejected isn't what greets the user next time.
         if (selectedVehicleIndex >= 0 && selectedVehicleIndex < vehicles.size()) {
             Vehicle v = vehicles.get(selectedVehicleIndex);
             if (v.id != null && !v.id.isEmpty()) {

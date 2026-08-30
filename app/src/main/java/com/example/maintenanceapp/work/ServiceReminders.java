@@ -50,7 +50,29 @@ public final class ServiceReminders {
     private static final String DOC_CHANNEL_ID = "document_reminders";
     private static final int DOC_NOTIFICATION_ID = 2002;
 
+    /**
+     * The user's own on/off switch for reminders, shown on the Profile tab.
+     *
+     * <p>Kept in the <b>"settings"</b> prefs file, the same one the biometric lock uses, and
+     * deliberately not in "auth": logout clears "auth", which would silently switch reminders back
+     * on for the next sign-in. Default is <b>on</b> — reminders are the reason the app checks
+     * anything in the background, and the OS permission prompt is the real gate on Android 13+.
+     */
+    private static final String PREFS = "settings";
+    private static final String KEY_ENABLED = "reminders_enabled";
+
     private ServiceReminders() { }
+
+    public static boolean isEnabled(Context ctx) {
+        return ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getBoolean(KEY_ENABLED, true);
+    }
+
+    public static void setEnabled(Context ctx, boolean enabled) {
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+                .putBoolean(KEY_ENABLED, enabled).apply();
+    }
+
 
     /**
      * Starts the daily check if it isn't already scheduled. Safe to call on every app start:
@@ -59,6 +81,11 @@ public final class ServiceReminders {
      * {@code KEEP} the already-enqueued job keeps the old period.)
      */
     public static void schedule(Context ctx) {
+        // Switched off on the Profile tab: don't enqueue the job at all, rather than enqueue it and
+        // throw its result away. A job that never runs costs nothing and wakes nothing.
+        if (!isEnabled(ctx)) {
+            return;
+        }
         Constraints constraints = new Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build();
@@ -114,6 +141,11 @@ public final class ServiceReminders {
      * urgent of the two states.
      */
     public static void notifyDue(Context ctx, List<String> overdue, List<String> due) {
+        // Belt and braces for the Profile switch: an already-enqueued job survives the toggle, so
+        // the preference is re-checked here rather than trusted to scheduling alone.
+        if (!isEnabled(ctx)) {
+            return;
+        }
         // The permission check has to be INLINE in the same method as notify(), duplicated across
         // the two notify methods rather than extracted into a helper. Lint's data-flow analysis only
         // recognises a checkSelfPermission guard it can see dominating the call site, so factoring it
@@ -169,6 +201,11 @@ public final class ServiceReminders {
      */
     public static void notifyDocumentsDue(Context ctx, List<String> overdue, List<String> due,
                                           Vehicle single) {
+        // Belt and braces for the Profile switch: an already-enqueued job survives the toggle, so
+        // the preference is re-checked here rather than trusted to scheduling alone.
+        if (!isEnabled(ctx)) {
+            return;
+        }
         // The permission check has to be INLINE in the same method as notify(), duplicated across
         // the two notify methods rather than extracted into a helper. Lint's data-flow analysis only
         // recognises a checkSelfPermission guard it can see dominating the call site, so factoring it

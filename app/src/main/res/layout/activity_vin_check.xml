@@ -1,10 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- In-app assisted ГТП check. Hosts RTA's public vin-check page in a WebView so the user solves the
-     reCAPTCHA themselves (a human, as RTA intends — the app never forges a token), and the app then
-     reads the inspection date off RTA's own rendered result and offers it back for confirmation.
-
-     #vcRoot receives the window-inset padding in onCreate. Not a SwipeRefreshLayout: a pull would
-     fight scrolling inside the WebView, and there is nothing of ours to refresh here. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/vcRoot"
@@ -13,8 +7,6 @@
     android:orientation="vertical"
     android:background="?attr/colorSurface">
 
-    <!-- Header: back + title + open-in-browser fallback (for the case where reCAPTCHA refuses to
-         run inside a WebView, which Google sometimes enforces). -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -66,7 +58,6 @@
             android:contentDescription="@string/vc_open_browser" />
     </LinearLayout>
 
-    <!-- Hint strip: tells the user their VIN is on the clipboard and what to do. -->
     <TextView
         android:id="@+id/vcHint"
         android:layout_width="match_parent"
@@ -95,9 +86,6 @@
         android:layout_height="0dp"
         android:layout_weight="1" />
 
-    <!-- Load-failure bar. Without it a page that never renders is just a blank WebView with no way
-         out but Back — which is exactly how the Guarantee Fund's intermittent failures presented.
-         Raised by onReceivedError on the main frame and by the load watchdog. -->
     <LinearLayout
         android:id="@+id/vcErrorBar"
         android:layout_width="match_parent"
@@ -141,8 +129,6 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Result bar: appears when the app detects a date in RTA's rendered result. Nothing is ever
-         saved silently — the user taps to confirm, and can compare it against what's on screen. -->
     <LinearLayout
         android:id="@+id/vcResultBar"
         android:layout_width="match_parent"
