@@ -11,7 +11,6 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- Header -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -38,10 +37,6 @@
                 android:textSize="14sp" />
         </LinearLayout>
 
-        <!-- Fleet overview dashboard. Replaces the old single warning banner: two stat tiles plus
-             alerts split by category (service vs documents), each tinted by its worst severity. Set
-             up in refreshOverview(); hidden entirely when the fleet is empty (the empty state shows
-             instead). -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/homeOverviewCard"
             android:layout_width="match_parent"
@@ -63,7 +58,6 @@
                 android:orientation="vertical"
                 android:padding="18dp">
 
-                <!-- Stat tiles -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -131,7 +125,6 @@
                     android:layout_marginTop="16dp"
                     android:background="?attr/colorOutlineVariant" />
 
-                <!-- All-clear row: shown only when nothing needs attention. -->
                 <LinearLayout
                     android:id="@+id/ovAllGood"
                     android:layout_width="match_parent"
@@ -158,7 +151,6 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- Service category row. Icon tint + detail colour set per worst severity. -->
                 <LinearLayout
                     android:id="@+id/ovServiceRow"
                     android:layout_width="match_parent"
@@ -195,7 +187,6 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- Documents category row. -->
                 <LinearLayout
                     android:id="@+id/ovDocsRow"
                     android:layout_width="match_parent"
@@ -234,10 +225,6 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- List / empty state -->
-        <!-- Pull-to-refresh wraps the list AND the empty state, so a refresh is still reachable when
-             the fleet is empty. RecyclerView is a nested-scrolling child, so the pull gesture only
-             starts once the list is already scrolled to the top. -->
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/homeSwipe"
             android:layout_width="match_parent"
@@ -309,5 +296,4 @@
         app:backgroundTint="?attr/colorPrimary"
         app:icon="@drawable/ic_add"
         app:iconTint="?attr/colorOnPrimary" />
-
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

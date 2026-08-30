@@ -22,6 +22,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.maintenanceapp.model.MaintenanceItem;
 import com.example.maintenanceapp.model.Vehicle;
+import com.example.maintenanceapp.util.Api;
 import com.example.maintenanceapp.util.ApiClient;
 import com.example.maintenanceapp.util.ComplianceStatus;
 import com.example.maintenanceapp.util.MaintenanceStatus;
@@ -58,55 +59,15 @@ import okhttp3.Response;
 public class VehicleDetailActivity extends AppCompatActivity {
 
     public static final String EXTRA_VEHICLE = "extra_vehicle";
-
-    // Returns one vehicle's photo as {"imageBase64":"<data>"} and/or {"imageName":"<name>"}, the
-    // latter naming a bundled res/drawable. See fetchPhoto.
-    private static final String IMAGE_URL = "http://92.5.55.85:27778/vehicles/image";
     private static final int IMAGE_MAX_ATTEMPTS = 3;
-
-    private static final String MAINTENANCE_URL = "http://92.5.55.85:27778/vehicles/maintenance";
-    // Full record list (no latest-per-type collapsing) — only the PDF export reads this.
-    private static final String HISTORY_URL = "http://92.5.55.85:27778/vehicles/maintenance/history";
     private static final int HISTORY_MAX_ATTEMPTS = 3;
     private static final int MAINTENANCE_MAX_ATTEMPTS = 3;
-
-    // Body {"id":"<id>"}; deletes the vehicle and its maintenance records. NOT retried: unlike the
-    // GETs, this mutates, and a retry after a response that was actually delivered-but-truncated
-    // would fire a second delete.
-    private static final String DELETE_URL = "http://92.5.55.85:27778/vehicles/delete";
-
-    // Body {"id":"<recordId>"}; deletes ONE maintenance record. Also not retried (see above).
-    private static final String RECORD_DELETE_URL =
-            "http://92.5.55.85:27778/vehicles/maintenance/delete";
-
-    // TODO(temporary): preview the maintenance UI with local sample data until the C++
-    // /vehicles/maintenance endpoint exists. Set to false (or delete buildSampleMaintenance
-    // + this flag) to use the real server response.
     private static final boolean USE_SAMPLE_MAINTENANCE = false;
-
     private OkHttpClient client;
-
     private Vehicle vehicle;
-
-    /** Guards against a double-tap firing two deletes while the first request is still open. */
-    private boolean deleteInFlight;
-
-    /** Same guard for single-record deletes (the cards are re-inflated on every refetch). */
-    private boolean recordDeleteInFlight;
-
-    /** Stops a double-tap on the export button rendering and sharing the same PDF twice. */
-    private boolean exportInFlight;
-
-    /** Which action the user picked before the export started: save to a file, or share. */
-    private boolean saveAfterExport;
-
-    /** The rendered PDF, held while the "create document" picker is open. */
+    private boolean deleteInFlight, recordDeleteInFlight, exportInFlight, saveAfterExport;
     private File pendingExportFile;
 
-    /**
-     * Lets the user choose where the PDF is written. SAF needs no storage permission on any API
-     * level, so nothing has to be requested and there's no pre-API-29 MediaStore fallback.
-     */
     private final ActivityResultLauncher<String> createDocument =
             registerForActivityResult(new ActivityResultContracts.CreateDocument("application/pdf"), uri -> {
                 if (uri != null) {
@@ -116,10 +77,8 @@ public class VehicleDetailActivity extends AppCompatActivity {
                 }
             });
 
-    /** Root pull-to-refresh host; also the view that receives the window-inset padding. */
     private SwipeRefreshLayout swipe;
 
-    // Opens the edit form; on success updates the shown data and flags the list for a refresh.
     private final ActivityResultLauncher<Intent> editVehicleLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
                 if (result.getResultCode() == RESULT_OK && result.getData() != null) {
@@ -128,16 +87,17 @@ public class VehicleDetailActivity extends AppCompatActivity {
                     if (updated != null) {
                         vehicle = updated;
                         bindVehicleInfo();
+                        ImageView photo = findViewById(R.id.imgVehicle);
+                        VehicleImages.apply(this, photo, vehicle.imageBase64, vehicle.imageName,
+                                vehicle.id, VehicleType.of(vehicle));
+                        if (vehicle.id != null && !vehicle.id.isEmpty()) {
+                            fetchPhoto(vehicle.id, photo, 1);
+                        }
                         setResult(RESULT_OK);   // tell MainActivity to reload the list on back
                     }
                 }
             });
 
-    /**
-     * Opens the per-vehicle documents screen. It edits the same vehicle row this screen shows (the
-     * ГТП/ГО dates go through /vehicles/update), so its result is handled exactly like the edit
-     * form's: re-bind from the returned vehicle and flag MainActivity for a reload.
-     */
     private final ActivityResultLauncher<Intent> complianceLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
                 if (result.getResultCode() == RESULT_OK && result.getData() != null) {
@@ -158,8 +118,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
 
         client = ApiClient.get(this);
 
-        // App targets SDK 36 -> edge-to-edge by default, so the header (back button) would otherwise
-        // be drawn under the status bar and left untappable.
         ScreenInsets.apply(findViewById(R.id.detailRoot));
 
         ImageButton btnBack = findViewById(R.id.btnBack);
@@ -194,8 +152,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
         SwipeRefresh.theme(swipe);
         swipe.setOnRefreshListener(this::refreshFromServer);
 
-        // Show whatever the list row already had, then ask the server for this car's photo
-        // (GET /vehicles/image?id=) and swap in the full-size one.
         VehicleImages.apply(this, imgVehicle, vehicle.imageBase64, vehicle.imageName, vehicle.id,
                 VehicleType.of(vehicle));
         if (vehicle.id != null && !vehicle.id.isEmpty()) {
@@ -214,11 +170,7 @@ public class VehicleDetailActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Pull-to-refresh: re-runs this vehicle's two server reads (photo name + maintenance schedule).
-     * The vehicle's own fields came from the list in MainActivity, so they are not refetched here —
-     * an edit already round-trips them through EditVehicleActivity.
-     */
+    /** Pull-to-refresh */
     private void refreshFromServer() {
         if (vehicle.id == null || vehicle.id.isEmpty()) {
             swipe.setRefreshing(false);
@@ -228,7 +180,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
         fetchMaintenance(vehicle.id, vehicle.mileage, 1);
     }
 
-    /** Confirms deletion of a single maintenance record, naming the item and its mileage. */
     private void confirmDeleteRecord(MaintenanceItem item) {
         if (recordDeleteInFlight) {
             return;
@@ -242,15 +193,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
                 .show();
     }
 
-    /**
-     * POSTs {@code {"id":...}} to /vehicles/maintenance/delete, then refetches the schedule.
-     *
-     * <p>The refetch matters: the server returns the <em>latest</em> record per service type, so
-     * deleting one doesn't necessarily remove the card — it falls back to the previous record for
-     * that type, with different mileage and possibly a different status. Only a refetch shows that
-     * correctly. {@code setResult(RESULT_OK)} is also set because the worst-case status can change,
-     * which the Автопарк badges and reminder banner are derived from.
-     */
     private void deleteRecord(MaintenanceItem item) {
         String json;
         try {
@@ -262,7 +204,7 @@ public class VehicleDetailActivity extends AppCompatActivity {
 
         recordDeleteInFlight = true;
         Request request = new Request.Builder()
-                .url(RECORD_DELETE_URL)
+                .url(Api.MAINTENANCE_DELETE)
                 .post(RequestBody.create(json, MediaType.parse("application/json")))
                 .build();
 
@@ -300,23 +242,15 @@ public class VehicleDetailActivity extends AppCompatActivity {
         });
     }
 
-    // ---- PDF export ----------------------------------------------------------
-
-    /**
-     * Asks what to do with the export, then fetches and renders it. The choice is made <em>first</em>
-     * so the user isn't left waiting on a download and then asked a question.
-     */
+    /** Asks what to do with the export, then fetches and renders it. */
     private void exportHistory() {
         if (vehicle.id == null || vehicle.id.isEmpty()) {
             Toast.makeText(this, R.string.pdf_error, Toast.LENGTH_SHORT).show();
             return;
         }
         if (exportInFlight) {
-            return;   // a second tap would render the same file twice
+            return;
         }
-        // Three ways to hand the history over: a file the user keeps, a file they send, or a live
-        // link that stays current. The first two share the fetch-and-render path; the third is a
-        // different feature entirely and goes to its own screen.
         String[] actions = {
                 getString(R.string.pdf_action_save),
                 getString(R.string.pdf_action_share),
@@ -335,15 +269,7 @@ public class VehicleDetailActivity extends AppCompatActivity {
                 .show();
     }
 
-    /**
-     * Fetches the <em>full</em> history and renders the PDF.
-     *
-     * <p>Uses {@code /vehicles/maintenance/history}, not the {@code /vehicles/maintenance} the rest
-     * of this screen reads: that one returns the latest record per type, which would make a
-     * "history" document showing one line per service type — not a history at all.
-     *
-     * @param save true to write the file where the user chooses, false to open a share sheet.
-     */
+    /** Fetches the full history and renders the PDF. */
     private void startExport(boolean save) {
         exportInFlight = true;
         saveAfterExport = save;
@@ -353,7 +279,7 @@ public class VehicleDetailActivity extends AppCompatActivity {
     }
 
     private void fetchHistory(String id, int attempt) {
-        HttpUrl url = HttpUrl.parse(HISTORY_URL).newBuilder()
+        HttpUrl url = HttpUrl.parse(Api.MAINTENANCE_HISTORY).newBuilder()
                 .addQueryParameter("id", id)
                 .build();
         Request request = new Request.Builder().url(url).get().build();
@@ -378,8 +304,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
                         items = MaintenanceItem.listFromJson(r.body().string());
                     }
                 } catch (IOException | JSONException e) {
-                    // Same rule as the photo fetch: a body cut mid-payload surfaces as a parse
-                    // failure, not an IOException, so both are retried.
                     Log.e("Export", "history read/parse failed (attempt " + attempt + ")", e);
                 }
 
@@ -387,7 +311,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
                     retryOrFail(id, attempt);
                     return;
                 }
-                // Render off the main thread — this callback is already on OkHttp's.
                 File file = null;
                 try {
                     file = new ServiceHistoryPdf(getApplicationContext()).write(vehicle, items);
@@ -408,7 +331,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
         }
     }
 
-    /** Re-enables the button and, when the render succeeded, saves or shares as chosen. */
     private void finishExport(File file) {
         exportInFlight = false;
         findViewById(R.id.btnExport).setEnabled(true);
@@ -417,10 +339,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
             return;
         }
         if (saveAfterExport) {
-            // Storage Access Framework: the user picks the folder (Downloads or anywhere else) and
-            // can rename the file. Chosen over writing to Downloads directly because it needs *no*
-            // storage permission on any API level — MediaStore is only permission-free from API 29,
-            // and minSdk here is 24, which would have meant a WRITE_EXTERNAL_STORAGE path as well.
             pendingExportFile = file;
             createDocument.launch(file.getName());
         } else {
@@ -455,7 +373,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
             Toast.makeText(this, R.string.pdf_save_error, Toast.LENGTH_LONG).show();
             return;
         }
-        // Offer to open it — a toast alone leaves the user hunting for where it went.
         Snackbar.make(findViewById(R.id.detailRoot), R.string.pdf_saved, Snackbar.LENGTH_LONG)
                 .setAction(R.string.pdf_open, v -> openPdf(target))
                 .show();
@@ -473,8 +390,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
     }
 
     private void share(File file) {
-        // A file:// URI would throw FileUriExposedException from API 24 on; FileProvider hands out
-        // a content:// URI the receiving app is granted read access to.
         Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", file);
         Intent send = new Intent(Intent.ACTION_SEND)
                 .setType("application/pdf")
@@ -502,11 +417,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
                 .show();
     }
 
-    /**
-     * POSTs {@code {"id":...}} to /vehicles/delete. On success finishes with {@code RESULT_OK}, which
-     * is what makes {@code MainActivity.vehicleDetailLauncher} reload the list — the deleted row and
-     * its status badge then disappear together.
-     */
     private void deleteVehicle() {
         if (vehicle.id == null || vehicle.id.isEmpty()) {
             Toast.makeText(this, R.string.delete_error, Toast.LENGTH_SHORT).show();
@@ -527,7 +437,7 @@ public class VehicleDetailActivity extends AppCompatActivity {
         }
 
         Request request = new Request.Builder()
-                .url(DELETE_URL)
+                .url(Api.VEHICLE_DELETE)
                 .post(RequestBody.create(json, MediaType.parse("application/json")))
                 .build();
 
@@ -551,8 +461,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     if (ok) {
                         Toast.makeText(VehicleDetailActivity.this, R.string.delete_ok, Toast.LENGTH_SHORT).show();
-                        // The row is gone — drop its cached bitmap so a future vehicle reusing the
-                        // id can't inherit this one's photo.
                         VehicleImages.evict(vehicle.id);
                         setResult(RESULT_OK);   // MainActivity reloads the list
                         finish();
@@ -566,7 +474,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
         });
     }
 
-    /** Binds the headline, subtitle and spec rows from the current {@link #vehicle}. */
     private void bindVehicleInfo() {
         ((TextView) findViewById(R.id.txtHeadline)).setText(join(vehicle.make, vehicle.model));
         ((TextView) findViewById(R.id.txtSubtitle)).setText(buildSubtitle(vehicle));
@@ -585,15 +492,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
         bindDocumentsRow();
     }
 
-    /**
-     * Puts a warning glyph on the documents row when a declared expiry date is due or past.
-     *
-     * <p>Only the two declared dates feed this. The vignette is deliberately left out: it needs a
-     * network call this screen doesn't make, and a badge that silently ignores one of three documents
-     * while looking authoritative is worse than no badge. So the absence of a warning means "nothing
-     * <em>you told us</em> is expiring", never "this car is road-legal" — which is also why there is
-     * no green/OK state here, only the warning or nothing.
-     */
     private void bindDocumentsRow() {
         ImageView warning = findViewById(R.id.detailDocWarning);
         ComplianceStatus worst = ComplianceStatus.declared(vehicle);
@@ -603,25 +501,12 @@ public class VehicleDetailActivity extends AppCompatActivity {
             return;
         }
         warning.setVisibility(View.VISIBLE);
-        // Tint on the card background, so the status_*_text flavour — the fill colours are for badges
-        // with white text on top and are unreadable used this way on the dark scheme.
         warning.setImageTintList(android.content.res.ColorStateList.valueOf(
                 ContextCompat.getColor(this, worst.textColorRes)));
     }
 
-    /**
-     * Fetches this vehicle's photo. The response may carry either transport — {@code imageBase64}
-     * (photos the user uploaded, stored in the DB) or {@code imageName} (a bundled drawable) — so
-     * both are read and handed to {@link VehicleImages#apply}, which prefers the base64 one.
-     *
-     * <p>A base64 body is exactly the payload shape this server truncates — a 1024x768 photo is a
-     * couple of MB — so <b>a parse failure is retried here, not just an I/O failure</b>: a cut
-     * payload usually arrives as syntactically broken JSON (unterminated string), which used to
-     * fall straight through to the placeholder without a single retry. Every failure path logs
-     * under the {@code VehicleImage} tag with the byte counts needed to tell them apart.
-     */
     private void fetchPhoto(String id, ImageView target, int attempt) {
-        HttpUrl url = HttpUrl.parse(IMAGE_URL).newBuilder()
+        HttpUrl url = HttpUrl.parse(Api.VEHICLE_IMAGE).newBuilder()
                 .addQueryParameter("id", id)
                 .build();
         Request request = new Request.Builder().url(url).get().build();
@@ -633,7 +518,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
                 if (attempt < IMAGE_MAX_ATTEMPTS) {
                     fetchPhoto(id, target, attempt + 1);
                 }
-                // else: keep the placeholder already shown
             }
 
             @Override
@@ -643,11 +527,9 @@ public class VehicleDetailActivity extends AppCompatActivity {
                 try (Response r = response) {
                     if (!r.isSuccessful()) {
                         Log.e("VehicleImage", "HTTP " + r.code() + " (attempt " + attempt + ")");
-                        return;   // not a transport glitch; retrying won't help
+                        return;
                     }
                     if (r.body() != null) {
-                        // Length of what actually arrived vs. what the server promised: unequal
-                        // means the response was cut short, which is the known server-side bug.
                         String body = r.body().string();
                         Log.i("VehicleImage", "body=" + body.length() + " chars, Content-Length="
                                 + r.header("Content-Length") + " (attempt " + attempt + ")");
@@ -660,8 +542,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
                 } catch (IOException e) {
                     Log.e("VehicleImage", "read failed — body cut short (attempt " + attempt + ")", e);
                 } catch (JSONException e) {
-                    // Truncation mid-payload lands here, not in the IOException branch: the socket
-                    // closed cleanly, the JSON just stops in the middle of the base64 string.
                     Log.e("VehicleImage", "parse failed — body likely truncated (attempt " + attempt + ")", e);
                 }
 
@@ -675,13 +555,11 @@ public class VehicleDetailActivity extends AppCompatActivity {
                     return;
                 }
                 if (name.isEmpty() && base64.isEmpty()) {
-                    return;   // nothing to show; don't replace what's already on screen
+                    return;
                 }
                 final String imageName = name;
                 final String imageBase64 = base64;
                 runOnUiThread(() -> {
-                    // Drop the cached bitmap first — the payload here may be a different (larger)
-                    // rendition than whatever the list row cached under this id.
                     VehicleImages.evict(vehicle.id);
                     VehicleImages.apply(VehicleDetailActivity.this, target,
                             imageBase64, imageName, vehicle.id, VehicleType.of(vehicle));
@@ -690,13 +568,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
         });
     }
 
-    // ---- Maintenance schedule ------------------------------------------------
-
-    /**
-     * TEMPORARY preview data — remove together with {@link #USE_SAMPLE_MAINTENANCE} once the
-     * server endpoint exists. Figures are derived from the current mileage so the preview shows
-     * an Overdue, a Due-soon, and two OK cards regardless of the vehicle.
-     */
     private List<MaintenanceItem> buildSampleMaintenance(int current) {
         List<MaintenanceItem> list = new ArrayList<>();
         list.add(sample("Oil & oil filter",          current - 15000, current - 2000));  // overdue
@@ -715,7 +586,7 @@ public class VehicleDetailActivity extends AppCompatActivity {
     }
 
     private void fetchMaintenance(String id, int currentMileage, int attempt) {
-        HttpUrl url = HttpUrl.parse(MAINTENANCE_URL).newBuilder()
+        HttpUrl url = HttpUrl.parse(Api.MAINTENANCE).newBuilder()
                 .addQueryParameter("id", id)
                 .build();
         Request request = new Request.Builder().url(url).get().build();
@@ -728,7 +599,7 @@ public class VehicleDetailActivity extends AppCompatActivity {
                     fetchMaintenance(id, currentMileage, attempt + 1);
                     return;
                 }
-                renderMaintenance(new ArrayList<>(), currentMileage);   // give up -> empty state
+                renderMaintenance(new ArrayList<>(), currentMileage);
             }
 
             @Override
@@ -795,8 +666,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
         TextView cost = card.findViewById(R.id.txtCost);
         LinearProgressIndicator progress = card.findViewById(R.id.progressService);
 
-        // Wired before the early return below: a record with incomplete mileage data is exactly the
-        // kind a user wants to delete, so it must not lose its delete button.
         ImageButton btnDeleteRecord = card.findViewById(R.id.btnDeleteRecord);
         boolean deletable = item.id != null && !item.id.isEmpty();
         btnDeleteRecord.setVisibility(deletable ? View.VISIBLE : View.GONE);
@@ -804,8 +673,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
             btnDeleteRecord.setOnClickListener(v -> confirmDeleteRecord(item));
         }
 
-        // Same reason: notes and price don't depend on the mileage figures, so they're bound before
-        // the "not enough data" bail-out — a record with only a note would otherwise show nothing.
         ImageButton btnNotes = card.findViewById(R.id.btnNotes);
         boolean hasNotes = item.notes != null && !item.notes.trim().isEmpty();
         btnNotes.setVisibility(hasNotes ? View.VISIBLE : View.GONE);
@@ -813,7 +680,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
             btnNotes.setOnClickListener(v -> showNotes(item));
         }
 
-        // Also before the bail-out: a record can carry a receipt without usable mileage figures.
         ImageButton btnDocument = card.findViewById(R.id.btnDocument);
         boolean hasDocument = item.documentId != null && !item.documentId.trim().isEmpty();
         btnDocument.setVisibility(hasDocument ? View.VISIBLE : View.GONE);
@@ -821,7 +687,7 @@ public class VehicleDetailActivity extends AppCompatActivity {
             btnDocument.setOnClickListener(v -> openDocument(item));
         }
 
-        boolean hasCost = item.cost >= 0;   // negative = the server sent no price for this record
+        boolean hasCost = item.cost >= 0;
         cost.setVisibility(hasCost ? View.VISIBLE : View.GONE);
         if (hasCost) {
             cost.setText(getString(R.string.record_cost, formatMoney(item.cost)));
@@ -833,7 +699,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
 
         int interval = item.nextChangeMileage - item.lastChangeMileage;
         if (item.nextChangeMileage <= 0 || interval <= 0) {
-            // Not enough data to compute progress/status — just show the figures.
             progress.setVisibility(View.GONE);
             remaining.setVisibility(View.GONE);
             status.setVisibility(View.GONE);
@@ -845,7 +710,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
         pct = Math.max(0, Math.min(100, pct));
         progress.setProgressCompat(pct, false);
 
-        // interval > 0 and nextChangeMileage > 0 are guaranteed above, so this is non-null.
         MaintenanceStatus st = MaintenanceStatus.of(
                 item.lastChangeMileage, item.nextChangeMileage, currentMileage);
         String remainText = remainingKm <= 0
@@ -860,16 +724,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
         remaining.setTextColor(color);
     }
 
-    /**
-     * Shows one record's notes in a dialog rather than on the card: notes are up to 200 characters
-     * of free text, which would push the mileage figures of every other card off the screen.
-     * Read-only — the record itself is edited by deleting and re-adding it.
-     */
-    /**
-     * Opens the record's document photo full-screen. Passes only the id — never the bitmap, which would
-     * blow the Binder transaction limit; {@code MaintenanceDocuments} caches by id, so the viewer gets
-     * it instantly if it has been opened before.
-     */
     private void openDocument(MaintenanceItem item) {
         Intent intent = new Intent(this, DocumentViewerActivity.class);
         intent.putExtra(DocumentViewerActivity.EXTRA_DOCUMENT_ID, item.documentId);
@@ -879,8 +733,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
 
     private void showNotes(MaintenanceItem item) {
         StringBuilder message = new StringBuilder();
-        // The card shows neither of these, so the dialog is also where the record's date and price
-        // are legible — otherwise the user has to export a PDF to see when a service happened.
         if (item.lastChangeDate != null && !item.lastChangeDate.trim().isEmpty()) {
             message.append(item.lastChangeDate.trim()).append('\n');
         }
@@ -899,16 +751,10 @@ public class VehicleDetailActivity extends AppCompatActivity {
                 .show();
     }
 
-    /** "180000" -> "180 000 км" (space thousands separator). */
     private String formatKm(int km) {
         return String.format(Locale.US, "%,d", km).replace(',', ' ') + " км";
     }
 
-    /**
-     * "1234.5" -> "1 234,50 €." — Bulgarian convention: space for thousands, comma for decimals.
-     * Formatted in {@code Locale.US} and swapped by hand (the same trick {@link #formatKm} uses), so
-     * the output can't change with the device locale while the rest of the screen stays Bulgarian.
-     */
     private String formatMoney(double value) {
         String formatted = String.format(Locale.US, "%,.2f", value)
                 .replace(',', ' ')
@@ -916,7 +762,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
         return formatted + " " + getString(R.string.currency_suffix);
     }
 
-    /** Fills one spec row (icon + label + value) inside the specs card. */
     private void bindSpec(int rowId, int iconRes, String label, String value) {
         View row = findViewById(rowId);
         ((ImageView) row.findViewById(R.id.specIcon)).setImageResource(iconRes);
@@ -924,7 +769,6 @@ public class VehicleDetailActivity extends AppCompatActivity {
         ((TextView) row.findViewById(R.id.specValue)).setText(value);
     }
 
-    /** Short one-liner under the headline, e.g. "2019 · Diesel · Blue". */
     private String buildSubtitle(Vehicle v) {
         StringBuilder sb = new StringBuilder();
         if (v.year > 0) append(sb, String.valueOf(v.year));

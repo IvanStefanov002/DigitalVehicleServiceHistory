@@ -13,6 +13,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.maintenanceapp.util.Api;
 import com.example.maintenanceapp.util.ApiClient;
 import com.example.maintenanceapp.util.BiometricLock;
 import com.example.maintenanceapp.util.ScreenInsets;
@@ -32,26 +33,15 @@ import okhttp3.Response;
 
 public class LoginActivity extends AppCompatActivity {
 
-    private static final String API_URL =
-            "http://92.5.55.85:27778/users/login";
-
-    // Login has no side effects, so it's safe to auto-retry transient/truncated responses
-    // (the backend intermittently drops the tail of a response -> "unexpected end of stream").
     private static final int LOGIN_MAX_ATTEMPTS = 3;
 
     private EditText edtUsername, edtPassword;
     private Button btnLogin;
-    /** Re-opens the biometric prompt after a dismissal; only shown for a locked saved session. */
     private Button btnUnlock;
     private ProgressBar progressLogin;
 
     private OkHttpClient client;
 
-    /**
-     * Registration normally signs the user in itself and never comes back. It only returns
-     * {@code RESULT_OK} in the fallback case where the account was created but the server issued no
-     * token — then we pre-fill the username so the user only has to retype the password.
-     */
     private final ActivityResultLauncher<Intent> registerLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
                 if (result.getResultCode() != RESULT_OK || result.getData() == null) {
@@ -71,21 +61,15 @@ public class LoginActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences("auth", MODE_PRIVATE);
         boolean hasSession = prefs.contains("username");
 
-        // Auto-skip login if already signed in and the session isn't locked. Returning here (the
-        // finish() used to fall through into the rest of onCreate) keeps the login form from being
-        // inflated for a split second on the way to MainActivity.
         if (hasSession && !BiometricLock.isEnabled(this)) {
             goToMain();
             return;
         }
 
         setContentView(R.layout.activity_login);
-
-        // Applied to the ScrollView, not the root, so the background photo stays full-bleed.
         ScreenInsets.apply(findViewById(R.id.loginContent));
 
         client = ApiClient.get(this);
-
         edtUsername = findViewById(R.id.edtUsername);
         edtPassword = findViewById(R.id.edtPassword);
         btnLogin = findViewById(R.id.btnLogin);
@@ -99,19 +83,12 @@ public class LoginActivity extends AppCompatActivity {
                 registerLauncher.launch(new Intent(this, RegisterActivity.class)));
 
         if (hasSession) {
-            // A locked session. The password form stays available underneath as the way in when
-            // biometrics are refused or have been removed from the device — the saved session is
-            // simply not honoured until the owner proves who they are.
             btnUnlock.setVisibility(View.VISIBLE);
             promptUnlock();
         }
     }
 
-    /**
-     * Asks for biometrics to release the saved session. Unavailable hardware (or no enrolment any
-     * more) is treated as "can't verify" and leaves the user on the password form rather than
-     * either locking them out or silently waving them through.
-     */
+    /** Asks for biometrics to release the saved session. */
     private void promptUnlock() {
         if (!BiometricLock.isAvailable(this)) {
             Toast.makeText(this, R.string.bio_unavailable, Toast.LENGTH_LONG).show();
@@ -128,7 +105,6 @@ public class LoginActivity extends AppCompatActivity {
                 if (message != null) {
                     Toast.makeText(LoginActivity.this, message, Toast.LENGTH_LONG).show();
                 }
-                // else: the user dismissed it deliberately — the password form is already on screen.
             }
         });
     }
@@ -152,7 +128,7 @@ public class LoginActivity extends AppCompatActivity {
             json.put("username", username);
             json.put("password", password);
 
-            // Prevent a second tap from firing another request while this one is in flight.
+            /** Prevent a second tap from firing another request while this one is in flight. */
             btnLogin.setEnabled(false);
             progressLogin.setVisibility(android.view.View.VISIBLE);
             attemptLogin(json.toString(), 1);
@@ -166,7 +142,7 @@ public class LoginActivity extends AppCompatActivity {
 
     private void attemptLogin(String bodyJson, int attempt) {
         RequestBody body = RequestBody.create(bodyJson, MediaType.parse("application/json"));
-        Request request = new Request.Builder().url(API_URL).post(body).build();
+        Request request = new Request.Builder().url(Api.LOGIN).post(body).build();
 
         client.newCall(request).enqueue(new Callback() {
 
@@ -189,7 +165,7 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call call, Response response) {
                 boolean success = false;
-                boolean networkError = false;   // true = truncated/unreadable body (retriable)
+                boolean networkError = false;
                 JSONObject data = null;
                 try (Response r = response) {
                     String responseBody = r.body() != null ? r.body().string() : "";
@@ -197,22 +173,18 @@ public class LoginActivity extends AppCompatActivity {
                         data = new JSONObject(responseBody);
                         success = true;
                     }
-                    // Non-2xx = genuine rejection (e.g. bad credentials): not retriable.
                 } catch (IOException e) {
-                    networkError = true;         // e.g. "unexpected end of stream" — worth retrying
+                    networkError = true;
                 } catch (JSONException e) {
-                    // Server sent 2xx but unparseable body; treat as a failed attempt (not auth).
                     networkError = true;
                 }
 
                 if (success) {
-                    // Save logged user + profile info (SharedPreferences = Android localStorage).
-                    // opt* is used so a missing field falls back to a default instead of throwing.
-                    SharedPreferences prefs =
-                            getSharedPreferences("auth", MODE_PRIVATE);
+                    /** Save logged user + profile info */
+                    SharedPreferences prefs = getSharedPreferences("auth", MODE_PRIVATE);
 
                     prefs.edit()
-                            // Bearer token authorizes every subsequent request (see ApiClient).
+                            // Bearer token authorizes every subsequent request.
                             .putString("token", data.optString("token", ""))
                             .putString("username", data.optString("username"))
                             .putString("fullName", data.optString("fullName"))
@@ -230,7 +202,6 @@ public class LoginActivity extends AppCompatActivity {
                     return;
                 }
 
-                // Retry only transient/truncation errors, not a real credential rejection.
                 if (networkError && attempt < LOGIN_MAX_ATTEMPTS) {
                     attemptLogin(bodyJson, attempt + 1);
                     return;

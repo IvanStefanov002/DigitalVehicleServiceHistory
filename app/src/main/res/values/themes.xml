@@ -1,13 +1,4 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!--
-      Single app theme for BOTH light and dark.
-
-      Every color below points at an @color/scheme_* name that is defined twice — once in
-      values/colors.xml (light) and once in values-night/colors.xml (dark navy + cyan). Android
-      picks the right file for the current mode, so this one style block skins both. That's why
-      there is no values-night/themes.xml override: duplicating the style there would mean
-      maintaining the mapping twice.
-    -->
     <style name="Base.Theme.MaintenanceApp" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/scheme_primary</item>
         <item name="colorOnPrimary">@color/scheme_on_primary</item>
@@ -37,7 +28,6 @@
         <item name="colorSurfaceVariant">@color/scheme_surface_variant</item>
         <item name="colorOnSurfaceVariant">@color/scheme_on_surface_variant</item>
 
-        <!-- Container tones drive Material 3 component backgrounds (cards, bottom nav, menus). -->
         <item name="colorSurfaceContainerLowest">@color/scheme_surface_container_lowest</item>
         <item name="colorSurfaceContainerLow">@color/scheme_surface_container_low</item>
         <item name="colorSurfaceContainer">@color/scheme_surface_container</item>
@@ -50,21 +40,16 @@
         <item name="colorOutline">@color/scheme_outline</item>
         <item name="colorOutlineVariant">@color/scheme_outline_variant</item>
 
-        <!-- System bars: content draws edge-to-edge (targetSdk 36), so only the icon contrast is
-             ours to set. @bool flips per mode from values(-night)/bools.xml. -->
         <item name="android:windowLightStatusBar">@bool/window_light_system_bars</item>
         <item name="android:windowLightNavigationBar">@bool/window_light_system_bars</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
 
-        <!-- Applied to every BottomNavigationView without touching activity_main.xml. -->
         <item name="bottomNavigationStyle">@style/Widget.App.BottomNav</item>
     </style>
 
     <style name="Theme.MaintenanceApp" parent="Base.Theme.MaintenanceApp" />
 
-    <!-- Bottom nav: the stock M3 active pill uses the secondary container (slate); point it at the
-         primary container instead so the cyan accent is what marks the selected tab. -->
     <style name="Widget.App.BottomNav" parent="Widget.Material3.BottomNavigationView">
         <item name="itemActiveIndicatorStyle">@style/Widget.App.BottomNav.ActiveIndicator</item>
         <item name="itemIconTint">@color/bottom_nav_item</item>
@@ -76,7 +61,6 @@
         <item name="android:color">?attr/colorPrimaryContainer</item>
     </style>
 
-    <!-- Field label on the add-service form. -->
     <style name="AmLabel" parent="">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
@@ -86,29 +70,22 @@
         <item name="android:textAllCaps">true</item>
     </style>
 
-    <!-- Thin divider between spec rows on the vehicle detail screen. -->
     <style name="Divider.Spec" parent="">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">1dp</item>
         <item name="android:background">?attr/colorOutlineVariant</item>
     </style>
 
-    <!-- Rounded corners for vehicle list thumbnails (ShapeableImageView). -->
     <style name="ShapeAppearanceOverlay.Vehicle.Thumbnail" parent="">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">24dp</item>
     </style>
 
-    <!-- Circular crop for the profile avatar (ShapeableImageView). Needed since the placeholder
-         became a photo: the old vector glyph was transparent outside its circle, so an unclipped
-         ImageView looked round by accident. A real photo does not, and centerCrop would have drawn
-         a square over the circular background. -->
     <style name="ShapeAppearanceOverlay.Avatar" parent="">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">50%</item>
     </style>
 
-    <!-- Small all-caps label above a value (service-type card, spec blocks). -->
     <style name="Label.Overline" parent="">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>

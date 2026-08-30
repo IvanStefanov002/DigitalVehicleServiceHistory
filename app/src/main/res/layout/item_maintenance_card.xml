@@ -17,7 +17,6 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Title + status badge -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -49,9 +48,6 @@
                 android:textStyle="bold"
                 android:text="OK" />
 
-            <!-- Opens the record's notes in a dialog. Hidden by bindMaintenanceCard when the record
-                 has none — an always-present button that opens an empty popup is worse than no
-                 button, and its absence is itself the "no notes" signal. -->
             <ImageButton
                 android:id="@+id/btnNotes"
                 android:layout_width="36dp"
@@ -63,10 +59,6 @@
                 app:tint="?attr/colorOnSurfaceVariant"
                 android:contentDescription="@string/record_notes_cd" />
 
-            <!-- Opens the attached document photo (receipt / invoice / protocol) full-screen. Hidden
-                 by bindMaintenanceCard when the record has no documentId — same rule as btnNotes: its
-                 absence is the "nothing attached" signal, and it degrades cleanly on a server build
-                 that doesn't send the field. -->
             <ImageButton
                 android:id="@+id/btnDocument"
                 android:layout_width="36dp"
@@ -78,8 +70,6 @@
                 app:tint="?attr/colorOnSurfaceVariant"
                 android:contentDescription="@string/record_document_cd" />
 
-            <!-- Deletes this single maintenance record. Hidden by bindMaintenanceCard when the
-                 payload carries no record id, so it degrades cleanly on older server builds. -->
             <ImageButton
                 android:id="@+id/btnDeleteRecord"
                 android:layout_width="36dp"
@@ -92,7 +82,6 @@
                 android:contentDescription="@string/record_delete_cd" />
         </LinearLayout>
 
-        <!-- Progress toward the next service -->
         <com.google.android.material.progressindicator.LinearProgressIndicator
             android:id="@+id/progressService"
             android:layout_width="match_parent"
@@ -103,7 +92,6 @@
             app:trackThickness="6dp"
             app:trackCornerRadius="3dp" />
 
-        <!-- Last / next change figures -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -164,9 +152,6 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Remaining / overdue summary, with the price paid on the same line. The two are
-             independent: a record can carry a cost without enough mileage data for a status, and
-             vice versa, so bindMaintenanceCard shows/hides them separately. -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

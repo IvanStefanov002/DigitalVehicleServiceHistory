@@ -1,13 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  Register screen. Deliberately mirrors activity_login.xml (same photo + scrim + floating card) so
-  the two halves of the auth journey read as one screen with a different form on it.
-
-  Insets are applied to #regContent, not the root: padding the root would inset the background
-  photo too and leave bars of raw window colour down the edges. The photo stays full-bleed, the
-  controls move. Like AddVehicleActivity, the inset union includes displayCutout() because the back
-  button sits in the top-left corner, where a camera notch can be taller than the status bar.
--->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/regRoot"
@@ -21,7 +12,6 @@
         android:src="@drawable/login_bg"
         android:contentDescription="@null" />
 
-    <!-- Scrim so the card and the back button stay readable over any photo -->
     <View
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -60,7 +50,6 @@
                         android:orientation="vertical"
                         android:padding="24dp">
 
-                        <!-- Brand -->
                         <ImageView
                             android:layout_width="56dp"
                             android:layout_height="56dp"
@@ -210,7 +199,6 @@
             </LinearLayout>
         </ScrollView>
 
-        <!-- Overlaid on the photo, above the scroll area, so it stays put while the form scrolls -->
         <ImageButton
             android:id="@+id/btnBack"
             android:layout_width="48dp"

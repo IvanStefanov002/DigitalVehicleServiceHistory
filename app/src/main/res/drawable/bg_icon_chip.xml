@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Rounded-square container behind a leading icon. Solid white so it can be recolored per use
-     site with android:backgroundTint (squircle reads more current than a plain circle). -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <corners android:radius="14dp" />

@@ -19,6 +19,7 @@ import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.maintenanceapp.util.Api;
 import com.example.maintenanceapp.util.ApiClient;
 import com.example.maintenanceapp.util.PickedImages;
 import com.example.maintenanceapp.util.ScreenInsets;
@@ -42,12 +43,7 @@ public class AddVehicleActivity extends AppCompatActivity {
 
     private static final String TAG = "AddVehicle";
 
-    private static final String API_URL = "http://92.5.55.85:27778/vehicles/add";
-
-    // Downscale/compress the chosen photo before sending: the image travels inline as base64 and is
-    // stored that way, so full camera resolution would bloat every response that carries it back —
-    // on a server that already truncates large payloads. Lossless WebP/PNG is used (not JPEG) so
-    // images with transparent backgrounds keep their alpha.
+    /** Downscale/compress the chosen photo before sending */
     private static final int MAX_IMAGE_DIMEN = 1024;   // px, longest side
 
     private OkHttpClient client;
@@ -57,17 +53,11 @@ public class AddVehicleActivity extends AppCompatActivity {
     private ImageView imgVehiclePhoto;
     private Button btnPickPhoto, btnSave;
     private TextView txtPhotoHint;
-
-    // Photo chosen by the user, ready to send (empty if none picked). Both are kept even while the
-    // user is in default mode, so toggling back and forth doesn't make them pick the same photo
-    // again — saveVehicle() decides whether to actually send it.
     private String imageBase64 = "";
     private Bitmap pickedPhoto;
-
-    // false = let the app use its default image (what it did before this panel existed).
     private boolean uploadPhoto;
 
-    // Modern photo picker — no runtime storage permission required.
+    /** Modern photo picker — no runtime storage permission required. */
     private final ActivityResultLauncher<PickVisualMediaRequest> pickMedia =
             registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), uri -> {
                 if (uri != null) {
@@ -81,10 +71,6 @@ public class AddVehicleActivity extends AppCompatActivity {
         setContentView(R.layout.activity_add_vehicle);
 
         client = ApiClient.get(this);
-
-        // Bars, cutout and keyboard — see ScreenInsets. The cutout part matters on this screen in
-        // particular: with a camera notch the status-bar inset alone can be shorter than the
-        // cutout, which left the back button underneath it.
         ScreenInsets.apply(findViewById(R.id.avRoot));
 
         ImageButton btnBack = findViewById(R.id.btnBack);
@@ -104,22 +90,14 @@ public class AddVehicleActivity extends AppCompatActivity {
 
         btnBack.setOnClickListener(v -> finish());
 
-        // The fuel picker is an exposed dropdown rather than a Spinner (see the layout). A Spinner
-        // always had item 0 selected; an autocomplete starts empty, so seed it or a user who never
-        // opens the dropdown would submit an empty fuelType.
         String[] fuelTypes = getResources().getStringArray(R.array.fuel_types);
         ddFuelType.setSimpleItems(fuelTypes);
         if (fuelTypes.length > 0) {
             ddFuelType.setText(fuelTypes[0], false);   // false = don't re-filter the list
         }
 
-        // Same seeding rule as the fuel picker: the labels and their order come from VehicleType so
-        // a position means the same thing here and on the edit screen, and the first entry (car) is
-        // preselected because most additions are cars and an empty type must never be submitted.
         ddVehicleType.setSimpleItems(VehicleType.labels(this));
         ddVehicleType.setText(getString(VehicleType.DEFAULT.labelRes), false);
-        // Changing the type re-renders the default-mode preview; in upload mode there is a real
-        // photo on screen and applyPhotoMode leaves it alone.
         ddVehicleType.setOnItemClickListener((parent, view, pos, id) -> applyPhotoMode(uploadPhoto));
 
         btnPickPhoto.setOnClickListener(v -> pickMedia.launch(
@@ -127,39 +105,26 @@ public class AddVehicleActivity extends AppCompatActivity {
                         .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
                         .build()));
 
-        // Photo mode. addOnButtonCheckedListener fires twice per switch — once unchecking the old
-        // button, once checking the new one — so only the checked callback is acted on, otherwise
-        // the panel would briefly render the state the user just left.
         MaterialButtonToggleGroup togglePhotoMode = findViewById(R.id.togglePhotoMode);
         togglePhotoMode.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
             if (isChecked) {
                 applyPhotoMode(checkedId == R.id.btnModeUpload);
             }
         });
-        // Default mode matches what the app did before this panel existed: no photo picked ->
-        // the server stores nothing and every screen falls back to the placeholder.
-        togglePhotoMode.check(R.id.btnModeDefault);
 
+        togglePhotoMode.check(R.id.btnModeDefault);
         btnSave.setOnClickListener(v -> saveVehicle());
     }
 
-    /**
-     * Switches the photo panel between "use the default image" and "upload my own".
-     *
-     * <p>Only the UI changes here — the already-encoded photo (if any) is deliberately kept, so
-     * flipping to default and back doesn't discard the user's pick. What gets sent is decided in
-     * {@link #saveVehicle()} from {@code uploadPhoto}.
-     */
+    /** Switches the photo panel between "use the default image" and "upload my own". */
     private void applyPhotoMode(boolean upload) {
         uploadPhoto = upload;
         btnPickPhoto.setVisibility(upload ? View.VISIBLE : View.GONE);
         if (!upload) {
-            // The placeholder for the type currently picked, so the preview shows what the list row
-            // will actually look like rather than always promising a car.
             imgVehiclePhoto.setImageResource(selectedVehicleType().placeholderRes);
             txtPhotoHint.setText(R.string.av_photo_hint_default);
         } else if (pickedPhoto != null) {
-            imgVehiclePhoto.setImageBitmap(pickedPhoto);   // restore an earlier pick
+            imgVehiclePhoto.setImageBitmap(pickedPhoto);
             txtPhotoHint.setText(R.string.av_photo_hint_picked);
         } else {
             txtPhotoHint.setText(R.string.av_photo_hint_upload);
@@ -168,9 +133,6 @@ public class AddVehicleActivity extends AppCompatActivity {
 
     private void handlePickedImage(Uri uri) {
         try {
-            // Decoding, downsampling and the EXIF rotation all live in PickedImages, shared with the
-            // document picker on AddMaintenanceActivity — the orientation fix is exactly the kind of
-            // thing that would otherwise get made in one screen and forgotten in the other.
             Bitmap bitmap = PickedImages.decodeUpright(this, uri, MAX_IMAGE_DIMEN);
             if (bitmap == null) {
                 Toast.makeText(this, "Could not read image", Toast.LENGTH_SHORT).show();
@@ -179,9 +141,6 @@ public class AddVehicleActivity extends AppCompatActivity {
             pickedPhoto = bitmap;
             imgVehiclePhoto.setImageBitmap(bitmap);
             txtPhotoHint.setText(R.string.av_photo_hint_picked);
-            // Lossless, not JPEG: a vehicle photo may be a PNG with transparency, which JPEG would
-            // flatten onto a solid background. (The document picker chooses JPEG for the opposite
-            // reason — flat paper, where size matters more.)
             imageBase64 = Base64.encodeToString(
                     PickedImages.encodeLossless(bitmap), Base64.NO_WRAP);
         } catch (IOException | OutOfMemoryError e) {
@@ -190,11 +149,6 @@ public class AddVehicleActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * The type currently shown in the dropdown, matched back to the enum by label. Position isn't
-     * usable here — an autocomplete filters as the user types, so a click index refers to the
-     * filtered adapter rather than to {@code VehicleType.values()}.
-     */
     private VehicleType selectedVehicleType() {
         String label = ddVehicleType.getText() == null ? "" : ddVehicleType.getText().toString().trim();
         for (VehicleType t : VehicleType.values()) {
@@ -218,7 +172,7 @@ public class AddVehicleActivity extends AppCompatActivity {
 
         // Required fields
         if (make.isEmpty() || model.isEmpty() || yearStr.isEmpty() || plate.isEmpty()) {
-            Toast.makeText(this, "Make, model, year and plate are required", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Марка, модел, година и регистрационен номер са задължителни!", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -237,15 +191,13 @@ public class AddVehicleActivity extends AppCompatActivity {
             json.put("vehicleType", vehicleType);
             json.put("vin", vin);
             json.put("color", color);
-            // Empty in default mode (and when upload mode was chosen but no photo picked): the
-            // server stores nothing and every screen falls back to the placeholder drawable.
             json.put("imageBase64", uploadPhoto ? imageBase64 : "");
         } catch (org.json.JSONException e) {
             throw new RuntimeException(e);
         }
 
         RequestBody body = RequestBody.create(json.toString(), MediaType.parse("application/json"));
-        Request request = new Request.Builder().url(API_URL).post(body).build();
+        Request request = new Request.Builder().url(Api.VEHICLE_ADD).post(body).build();
 
         btnSave.setEnabled(false);
         client.newCall(request).enqueue(new Callback() {
@@ -253,7 +205,7 @@ public class AddVehicleActivity extends AppCompatActivity {
             public void onFailure(Call call, IOException e) {
                 runOnUiThread(() -> {
                     btnSave.setEnabled(true);
-                    Toast.makeText(AddVehicleActivity.this, "Server error", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(AddVehicleActivity.this, "Системна грешка", Toast.LENGTH_SHORT).show();
                 });
             }
 

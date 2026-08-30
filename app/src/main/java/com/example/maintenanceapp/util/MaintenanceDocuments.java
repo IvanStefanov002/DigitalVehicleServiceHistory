@@ -25,12 +25,8 @@ public final class MaintenanceDocuments {
 
     private static final String TAG = "MaintDocs";
 
-    /** Server's public IPv4 address & server port */
-    private static final String BASE = "http://92.5.55.85:27778";
-
-    /** Server's endpoint for maintenance documents */
-    private static final String DOCUMENT_URL = BASE + "/vehicles/maintenance/document";
-    private static final String UPLOAD_URL = BASE + "/vehicles/maintenance/document";
+    private static final String DOCUMENT_URL = Api.MAINTENANCE_DOCUMENT;
+    private static final String UPLOAD_URL = Api.MAINTENANCE_DOCUMENT;
     private static final int MAX_DECODE_DIMEN = 2560;
 
     private static final LruCache<String, Bitmap> CACHE =

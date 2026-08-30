@@ -18,6 +18,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.maintenanceapp.model.Vehicle;
+import com.example.maintenanceapp.util.Api;
 import com.example.maintenanceapp.util.ApiClient;
 import com.example.maintenanceapp.util.QrCodes;
 import com.example.maintenanceapp.util.ScreenInsets;
@@ -37,20 +38,10 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-/**
- * Shows a scannable link to one vehicle's public service history: the buyer points a camera at the
- * QR and reads the record in a browser, with no app to install.
- *
- * <p>The link is minted server-side ({@code POST /vehicles/share}) rather than built here, because
- * the token has to be unguessable and revocable — a client-side URL containing the vehicle id would
- * let anyone enumerate every car in the database.
- */
 public class ShareHistoryActivity extends AppCompatActivity {
 
     public static final String EXTRA_VEHICLE = "extra_vehicle";
 
-    private static final String SHARE_URL = "http://92.5.55.85:27778/vehicles/share";
-    private static final String REVOKE_URL = "http://92.5.55.85:27778/vehicles/share/revoke";
     private static final int QR_PX = 640;
 
     private OkHttpClient client;
@@ -96,8 +87,6 @@ public class ShareHistoryActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // A dim screen is the most common reason a QR won't scan, and the user can't fix that
-        // without leaving this screen. Restored automatically when the Activity goes away.
         WindowManager.LayoutParams attrs = getWindow().getAttributes();
         attrs.screenBrightness = 1.0f;
         getWindow().setAttributes(attrs);
@@ -113,7 +102,7 @@ public class ShareHistoryActivity extends AppCompatActivity {
             return;
         }
         Request request = new Request.Builder()
-                .url(SHARE_URL)
+                .url(Api.SHARE)
                 .post(RequestBody.create(json, MediaType.parse("application/json")))
                 .build();
 
@@ -155,8 +144,6 @@ public class ShareHistoryActivity extends AppCompatActivity {
 
     private void showLink(String url, String expiresAt) {
         shareUrl = url;
-        // Encoding is a pure computation on a short string — fast enough not to warrant a thread,
-        // and doing it here keeps the bitmap's lifetime tied to the view that shows it.
         Bitmap qr = QrCodes.encode(url, QR_PX);
         if (qr == null) {
             showError();
@@ -191,7 +178,6 @@ public class ShareHistoryActivity extends AppCompatActivity {
         startActivity(Intent.createChooser(send, getString(R.string.share_title)));
     }
 
-    /** Revoking kills the link for everyone who already has it, so it's worth a confirm. */
     private void confirmRevoke() {
         if (revokeInFlight) {
             return;
@@ -216,7 +202,7 @@ public class ShareHistoryActivity extends AppCompatActivity {
         findViewById(R.id.btnRevoke).setEnabled(false);
 
         Request request = new Request.Builder()
-                .url(REVOKE_URL)
+                .url(Api.SHARE_REVOKE)
                 .post(RequestBody.create(json, MediaType.parse("application/json")))
                 .build();
 
