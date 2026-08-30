@@ -12,6 +12,7 @@ import androidx.work.WorkerParameters;
 import com.example.maintenanceapp.model.MaintenanceItem;
 import com.example.maintenanceapp.model.Vehicle;
 import com.example.maintenanceapp.model.VignetteInfo;
+import com.example.maintenanceapp.util.Api;
 import com.example.maintenanceapp.util.ApiClient;
 import com.example.maintenanceapp.util.ComplianceStatus;
 import com.example.maintenanceapp.util.MaintenanceStatus;
@@ -54,9 +55,6 @@ public class ServiceReminderWorker extends Worker {
 
     private static final String TAG = "ServiceReminders";
 
-    private static final String VEHICLES_URL = "http://92.5.55.85:27778/vehicles";
-    private static final String MAINTENANCE_URL = "http://92.5.55.85:27778/vehicles/maintenance";
-    private static final String VIGNETTE_URL = "http://92.5.55.85:27778/vehicles/vignette";
 
     /** Re-nudge about an unchanged backlog after this long, so ignoring it once isn't permanent. */
     private static final long REMIND_AGAIN_MS = TimeUnit.DAYS.toMillis(7);
@@ -218,7 +216,7 @@ public class ServiceReminderWorker extends Worker {
 
     /** @return the user's vehicles, or null if the server couldn't be reached / parsed. */
     private List<Vehicle> fetchVehicles(OkHttpClient client) {
-        Request request = new Request.Builder().url(VEHICLES_URL).get().build();
+        Request request = new Request.Builder().url(Api.VEHICLES).get().build();
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful() || response.body() == null) {
                 Log.e(TAG, "GET /vehicles -> HTTP " + response.code());
@@ -243,7 +241,7 @@ public class ServiceReminderWorker extends Worker {
 
     /** @return one vehicle's maintenance items, or null if the request failed. */
     private List<MaintenanceItem> fetchMaintenance(OkHttpClient client, String id) {
-        HttpUrl url = HttpUrl.parse(MAINTENANCE_URL).newBuilder()
+        HttpUrl url = HttpUrl.parse(Api.MAINTENANCE).newBuilder()
                 .addQueryParameter("id", id)
                 .build();
         Request request = new Request.Builder().url(url).get().build();
@@ -268,7 +266,7 @@ public class ServiceReminderWorker extends Worker {
      * notification claiming the user was driving illegally because a third-party service was down.
      */
     private VignetteInfo fetchVignette(OkHttpClient client, String id) {
-        HttpUrl url = HttpUrl.parse(VIGNETTE_URL).newBuilder()
+        HttpUrl url = HttpUrl.parse(Api.VEHICLE_VIGNETTE).newBuilder()
                 .addQueryParameter("id", id)
                 .build();
         Request request = new Request.Builder().url(url).get().build();

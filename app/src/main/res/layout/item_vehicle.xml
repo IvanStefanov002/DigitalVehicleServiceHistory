@@ -40,9 +40,6 @@
                 android:text="320d" android:layout_height="match_parent" android:layout_width="match_parent"/>
         </LinearLayout>
 
-        <!-- Two independent markers, stacked. They are deliberately NOT merged into one pill:
-             the service badge means "this car needs work", the document badge means "this car may be
-             illegal to drive", and a single „Просрочено“ could no longer tell you which. -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -51,7 +48,6 @@
             android:orientation="vertical"
             android:gravity="end">
 
-            <!-- Service reminder badge; shown + tinted per-vehicle in the adapter, hidden when unknown. -->
             <TextView
                 android:id="@+id/txtVehicleStatus"
                 android:layout_width="wrap_content"
@@ -66,10 +62,6 @@
                 android:textStyle="bold"
                 android:visibility="gone" />
 
-            <!-- Document validity badge. The shield glyph is what separates it from the service pill
-                 at a glance. Shown ONLY when something is expiring or expired — there is no green
-                 "all documents fine" state, because two of the three dates are self-reported and a
-                 green badge would be a claim the app can't back. Absence means "nothing to flag". -->
             <TextView
                 android:id="@+id/txtVehicleDocStatus"
                 android:layout_width="wrap_content"

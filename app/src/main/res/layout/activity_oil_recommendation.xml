@@ -1,18 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  „Моторно масло“ — the oil advisor. Opened from the Поддръжка tab (#cardOilAdvisor).
-
-  Same idiom as activity_add_maintenance.xml: tonal section cards, each headed by an accent icon
-  chip, holding outlined TextInputLayouts with floating labels. The accents encode real categories
-  per the Categorical accents rule: 1 = which vehicle, 2 = which engine (the lookup key), 3 = the
-  answer. It is a *read-only* screen — nothing here writes to the server — so there is no save
-  button and no SwipeRefreshLayout; the one action is #btnRecommend.
-
-  Ids the Activity looks up: oilRoot, btnBack, ddVehicle, ddEngine, tilEngine, ddFuel,
-  oilEnginesError, btnRetryEngines, btnRecommend, oilProgress, oilError, cardResult, txtResultEngine,
-  txtViscosity, chipSpecs, rowAlt, txtAlt, rowCapacity, txtCapacity, rowInterval, txtInterval,
-  productsLabel, productsContainer, txtOilNote.
--->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/oilRoot"
@@ -30,7 +16,6 @@
         android:paddingTop="16dp"
         android:paddingBottom="28dp">
 
-        <!-- Header -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -68,7 +53,6 @@
             android:textSize="13sp"
             android:lineSpacingExtra="3dp" />
 
-        <!-- ============ Section 1: which vehicle ============ -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -130,7 +114,6 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- ============ Section 2: the lookup key ============ -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -174,10 +157,6 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- Editable on purpose: the catalog ships 20 engines and the country drives
-                     hundreds, so a code that isn't in the table yet must still be sendable. That is
-                     also why it keeps a text inputType instead of the usual inputType="none" — the
-                     user types and the adapter filters. -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilEngine"
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
@@ -213,8 +192,6 @@
                         android:textSize="15sp" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- A failed catalog fetch is visible, never silent: the field still works, so say
-                     so instead of leaving an empty dropdown that just looks broken. -->
                 <LinearLayout
                     android:id="@+id/oilEnginesError"
                     android:layout_width="match_parent"
@@ -284,7 +261,6 @@
             android:lineSpacingExtra="3dp"
             android:visibility="gone" />
 
-        <!-- ============ Section 3: the answer ============ -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardResult"
             android:layout_width="match_parent"
@@ -343,8 +319,6 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- The grade, given the weight it carries in the shop: it is the first thing on the
-                     bottle and the first thing the user is looking for. -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -390,8 +364,6 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- The binding requirement gets its own labelled block rather than a line inside
-                     the grade: a 5W-30 without the right approval still destroys a DPF. -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

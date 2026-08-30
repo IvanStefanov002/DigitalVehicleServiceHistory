@@ -5,7 +5,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Full-screen background image (swap login_bg for your own) -->
     <ImageView
         android:id="@+id/imgBackground"
         android:layout_width="match_parent"
@@ -14,15 +13,11 @@
         android:src="@drawable/login_bg"
         android:contentDescription="@null" />
 
-    <!-- Scrim so the form stays readable over any photo -->
     <View
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#66000000" />
 
-    <!-- Insets (bars, cutout, keyboard) land on #loginContent, not on the root: padding the root
-         would inset the background photo too and leave bars of raw window colour down the edges.
-         Same split as activity_register.xml. -->
     <ScrollView
         android:id="@+id/loginContent"
         android:layout_width="match_parent"
@@ -49,7 +44,6 @@
                     android:orientation="vertical"
                     android:padding="24dp">
 
-                    <!-- Brand -->
                     <ImageView
                         android:layout_width="64dp"
                         android:layout_height="64dp"
@@ -137,8 +131,6 @@
                         android:layout_marginTop="16dp"
                         android:visibility="gone" />
 
-                    <!-- Shown only when a saved session is biometric-locked, so the user can
-                         re-open the prompt after dismissing it instead of restarting the app. -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnUnlock"
                         style="?attr/materialButtonOutlinedStyle"

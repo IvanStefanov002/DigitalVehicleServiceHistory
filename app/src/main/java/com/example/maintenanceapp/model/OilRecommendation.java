@@ -6,45 +6,19 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * The answer from {@code GET /oil/recommend} for one engine.
- *
- * <p>Two fields carry the actual advice and they are not equally important: {@link #viscosity} is
- * the SAE grade and {@link #specs} are the OEM approvals. The approvals are the binding requirement
- * — a 5W-30 without VW 507 00 will still wreck a DPF — so the screen shows them as a labelled row
- * of their own rather than folding them into the grade, and {@link #products} is explicitly the
- * <em>least</em> load-bearing part of the payload (brands are interchangeable, an approval is not).
- *
- * <p>Numeric "unknown" is negative / zero throughout, never a plausible-looking default: a made-up
- * oil capacity is worse than no capacity, same rule as {@code MaintenanceItem.cost}.
- */
 public class OilRecommendation {
 
     public String engineCode = "";
     public String engineName = "";
-
-    /** Primary SAE grade, e.g. {@code 5W-30}. */
     public String viscosity = "";
-
-    /** Optional second grade the engine also accepts (high mileage, hot climate, older spec). */
     public String altViscosity = "";
-
-    /** OEM approvals / ACEA classes. The part that actually binds. */
     public final List<String> specs = new ArrayList<>();
-
-    /** Sump capacity including the filter, litres. Negative = not recorded. */
     public double capacityLiters = -1;
-
-    /** Recommended change interval. {@code 0} = not recorded. */
     public int intervalKm;
     public int intervalMonths;
-
-    /** Free-text caveat from the catalog (e.g. LPG, DPF, known PD-camshaft wear). May be empty. */
     public String note = "";
-
     public final List<Product> products = new ArrayList<>();
 
-    /** One concrete oil the catalog suggests. Illustrative — the approvals above are the rule. */
     public static class Product {
         public String name = "";
         public String viscosity = "";

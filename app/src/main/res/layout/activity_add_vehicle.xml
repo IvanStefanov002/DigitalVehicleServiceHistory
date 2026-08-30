@@ -1,13 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- #avRoot is padded for the system bars / display cutout in AddVehicleActivity.onCreate; without
-     that the header's back button is drawn under the status bar and camera cutout, and untappable.
-
-     Structure mirrors activity_add_maintenance.xml — tonal section cards, each headed by an
-     accent icon chip, holding outlined TextInputLayouts with floating labels. The three accents
-     encode real categories (photo / required / optional), not variety; see CLAUDE.md.
-     Field labels are the shared ev_* strings, also used by activity_edit_vehicle.xml, and the
-     start icons are the same ones the detail screen puts on its spec rows, so a field looks the
-     same wherever the user meets it. -->
 <ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -23,7 +14,6 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Header: back button + title -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -60,7 +50,6 @@
             android:textSize="13sp"
             android:lineSpacingExtra="3dp" />
 
-        <!-- ============ Section 1: photo — own upload or the default image ============ -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -104,8 +93,6 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- Two mutually exclusive modes; selectionRequired stops the user from
-                     de-selecting both and leaving the panel in no state at all. -->
                 <com.google.android.material.button.MaterialButtonToggleGroup
                     android:id="@+id/togglePhotoMode"
                     android:layout_width="match_parent"
@@ -144,7 +131,6 @@
                     android:padding="4dp"
                     android:contentDescription="@string/av_photo_cd" />
 
-                <!-- Only shown in upload mode; the hint takes its place in default mode. -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnPickPhoto"
                     style="@style/Widget.Material3.Button.TextButton"
@@ -169,7 +155,6 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- ============ Section 2: the four fields saveVehicle() requires ============ -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -213,11 +198,6 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- Type comes first in this section because it is what the rest of the form is
-                     about: it decides how the vehicle is grouped on the Автопарк tab and whether the
-                     oil advisor will answer for it. Exposed dropdown, seeded in onCreate for the
-                     same reason as the fuel picker below (an autocomplete starts with nothing
-                     selected, unlike the Spinner this idiom replaced). -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                     android:layout_width="match_parent"
@@ -270,8 +250,6 @@
                         android:autofillHints="" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Year and plate share a row: a 4-digit year next to a full-width field wastes
-                     most of the line, and pairing them keeps the required block compact. -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -320,7 +298,6 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- ============ Section 3: everything with a usable default ============ -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -383,9 +360,6 @@
                         android:autofillHints="" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Exposed dropdown, not a bare Spinner, so it matches the outlined fields around
-                     it. AddVehicleActivity has to seed the first entry itself — unlike a Spinner,
-                     an autocomplete starts with nothing selected. -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                     android:layout_width="match_parent"

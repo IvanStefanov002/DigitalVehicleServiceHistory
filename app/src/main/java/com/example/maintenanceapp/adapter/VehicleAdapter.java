@@ -24,7 +24,7 @@ import java.util.Map;
 
 public class VehicleAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    /** Callback for when a vehicle row is tapped. */
+    /** listener for vehicle clicked */
     public interface OnVehicleClickListener {
         void onVehicleClick(Vehicle vehicle);
     }
@@ -32,11 +32,6 @@ public class VehicleAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     private static final int TYPE_HEADER = 0;
     private static final int TYPE_VEHICLE = 1;
 
-    /**
-     * One rendered line: either a group header or a vehicle. Built by {@link #rebuildRows()} from
-     * the vehicle list, so the grouping lives in one place instead of being spread across position
-     * arithmetic in every override.
-     */
     private static final class Row {
         final VehicleType header;   // non-null on a header row
         final int headerCount;      // vehicles under that header
@@ -59,16 +54,13 @@ public class VehicleAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     private final List<Row> rows = new ArrayList<>();
     private final OnVehicleClickListener clickListener;
 
-    // Per-vehicle service status (vehicle id -> worst status), populated asynchronously from
-    // GET /vehicles/maintenance. A missing entry means "unknown" and shows no badge.
+    // Per-vehicle service status
     private final Map<String, MaintenanceStatus> statuses = new HashMap<>();
 
-    // Per-vehicle document status (vehicle id -> worst of винетка/ГТП/ГО). Kept in its own map
-    // rather than merged into `statuses` because the two badges answer different questions and are
-    // populated from different sources at different times.
+    // Per-vehicle document status
     private final Map<String, ComplianceStatus> docStatuses = new HashMap<>();
 
-    public VehicleAdapter(List<Vehicle> vehicles, OnVehicleClickListener clickListener) {
+    public VehicleAdapter( List<Vehicle> vehicles, OnVehicleClickListener clickListener ) {
         this.vehicles = new ArrayList<>(vehicles);
         this.clickListener = clickListener;
         rebuildRows();
@@ -82,14 +74,7 @@ public class VehicleAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         notifyDataSetChanged();
     }
 
-    /**
-     * Groups the fleet by {@link VehicleType} — in the enum's declaration order, so sections don't
-     * reshuffle as vehicles come and go — and inserts a header above each group.
-     *
-     * <p><b>Headers only appear once the fleet holds more than one type.</b> A single band reading
-     * "Автомобили" over a list that is entirely cars separates nothing and costs a line; the
-     * grouping exists to tell kinds apart, so with one kind there is nothing to tell apart.
-     */
+    /** Groups the fleet by VehicleType */
     private void rebuildRows() {
         rows.clear();
         // Bucket first: the enum order decides section order, while the order within a section is
@@ -98,7 +83,7 @@ public class VehicleAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         for (Vehicle v : vehicles) {
             VehicleType type = VehicleType.of(v);
             List<Vehicle> bucket = buckets.get(type);
-            if (bucket == null) {
+            if ( bucket == null ) {
                 bucket = new ArrayList<>();
                 buckets.put(type, bucket);
             }
@@ -119,7 +104,6 @@ public class VehicleAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         }
     }
 
-    /** Updates the per-vehicle service-status badges (id -> status) and refreshes the rows. */
     public void setStatuses(Map<String, MaintenanceStatus> newStatuses) {
         statuses.clear();
         if (newStatuses != null) {
@@ -128,11 +112,7 @@ public class VehicleAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         notifyDataSetChanged();
     }
 
-    /**
-     * Updates the per-vehicle document badges (id -> worst document status) and refreshes the rows.
-     * A missing entry, or {@link ComplianceStatus#OK}, shows no badge — see the layout comment for
-     * why there is no positive state.
-     */
+    /** Updates the per-vehicle document badges */
     public void setDocStatuses(Map<String, ComplianceStatus> newStatuses) {
         docStatuses.clear();
         if (newStatuses != null) {
@@ -174,13 +154,11 @@ public class VehicleAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         holder.txtMake.setText(vehicle.make);
         holder.txtModel.setText(vehicle.model);
 
-        // Prefer the inline base64 photo, fall back to a bundled drawable by name, then this
-        // vehicle type's own placeholder. Rows never fetch per-id, so a photo only shows here if
-        // GET /vehicles included it. Cached by vehicle id so scrolling doesn't re-decode per bind.
+        // Prefer the inline base64 photo, fall back to a bundled drawable by name, then this vehicle type's own placeholder
         VehicleImages.apply(holder.itemView.getContext(), holder.imgVehicle,
                 vehicle.imageBase64, vehicle.imageName, vehicle.id, VehicleType.of(vehicle));
 
-        // Service reminder badge — tinted per status, hidden when the status is unknown.
+        // Service reminder badge
         MaintenanceStatus status = vehicle.id == null ? null : statuses.get(vehicle.id);
         if (status == null) {
             holder.txtStatus.setVisibility(View.GONE);
@@ -191,9 +169,7 @@ public class VehicleAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             holder.txtStatus.setVisibility(View.VISIBLE);
         }
 
-        // Document badge — only for DUE/OVERDUE. OK and unknown both render as nothing, on purpose:
-        // two of the three dates are user-declared, so a reassuring badge would overstate what the
-        // app actually knows.
+        // Document badge
         ComplianceStatus docStatus = vehicle.id == null ? null : docStatuses.get(vehicle.id);
         if (docStatus == null || docStatus == ComplianceStatus.OK) {
             holder.txtDocStatus.setVisibility(View.GONE);

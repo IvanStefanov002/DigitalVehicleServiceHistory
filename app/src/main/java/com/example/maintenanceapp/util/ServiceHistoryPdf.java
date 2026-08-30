@@ -22,22 +22,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * Renders a vehicle's service history to a PDF — the document a seller hands a buyer, which is
- * what the project is named after.
- *
- * <p>Two sections, because they answer different questions: a <b>summary</b> of the latest record
- * per service type ("when was the timing belt last done?") and the <b>full chronological log</b>
- * ("has this car actually been looked after?"). The summary is derived here rather than fetched
- * from {@code GET /vehicles/maintenance}, so the whole document comes from one consistent snapshot.
- *
- * <p>Deliberately plain {@link PdfDocument} — no library. The layout is a fixed-column table, which
- * is a few hundred lines of Canvas calls and no dependency.
- *
- * <p><b>Colours are hardcoded, not theme attributes.</b> A PDF is printed on white paper and read
- * outside the app; resolving {@code ?attr/colorSurface} would make the export come out with a navy
- * background whenever the user happens to be in dark mode.
- */
+/** Renders a vehicle's service history to a PDF */
 public final class ServiceHistoryPdf {
 
     // A4 at 72dpi, the unit PdfDocument works in.
@@ -64,7 +49,7 @@ public final class ServiceHistoryPdf {
     private PdfDocument doc;
     private PdfDocument.Page page;
     private Canvas canvas;
-    private int y;          // current baseline
+    private int y;
     private int pageNo;
 
     public ServiceHistoryPdf(Context ctx) {
@@ -73,12 +58,7 @@ public final class ServiceHistoryPdf {
         line.setStrokeWidth(0.7f);
     }
 
-    /**
-     * Writes the document and returns the file it landed in (under {@code cacheDir/exports}, the
-     * directory {@code res/xml/file_paths.xml} exposes through FileProvider).
-     *
-     * @param items the full history, newest first, as the history endpoint returns it.
-     */
+    /** Writes the document and returns the file it landed in cacheDir/exports */
     public File write(Vehicle vehicle, List<MaintenanceItem> items) throws IOException {
         doc = new PdfDocument();
         pageNo = 0;
@@ -103,8 +83,7 @@ public final class ServiceHistoryPdf {
         return file;
     }
 
-    // ---- sections ------------------------------------------------------------
-
+    /** sections */
     private void drawHeader(Vehicle v) {
         text.setColor(INK);
         text.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
@@ -131,7 +110,6 @@ public final class ServiceHistoryPdf {
         y += 24;
     }
 
-    /** Latest record per service type — one row each, in the order the types first appear. */
     private void drawSummary(List<MaintenanceItem> items) {
         Map<String, MaintenanceItem> latest = new LinkedHashMap<>();
         for (MaintenanceItem item : items) {
@@ -172,8 +150,7 @@ public final class ServiceHistoryPdf {
         }
     }
 
-    // ---- primitives ----------------------------------------------------------
-
+    /** primitives */
     private void drawSectionTitle(String title) {
         ensureSpace(40);
         text.setColor(INK);
@@ -197,11 +174,6 @@ public final class ServiceHistoryPdf {
         y += 13;
     }
 
-    /**
-     * One record. Notes wrap onto their own indented line, so a long note can't run under the next
-     * column — the row height is measured first and the whole row moves to the next page if it
-     * won't fit, rather than being split across the break.
-     */
     private void drawRow(MaintenanceItem item, boolean banded) {
         List<String> noteLines = item.notes == null || item.notes.trim().isEmpty()
                 ? new ArrayList<>()
@@ -242,8 +214,7 @@ public final class ServiceHistoryPdf {
         return atY + 14;
     }
 
-    // ---- pagination ----------------------------------------------------------
-
+    /** pagination */
     private void startPage() {
         pageNo++;
         page = doc.startPage(new PdfDocument.PageInfo.Builder(PAGE_W, PAGE_H, pageNo).create());
@@ -260,10 +231,6 @@ public final class ServiceHistoryPdf {
         doc.finishPage(page);
     }
 
-    /**
-     * @return true if the content fits on the current page; false after starting a new one, so the
-     *         caller can re-draw anything a page break invalidates (e.g. table column heads).
-     */
     private boolean ensureSpace(int needed) {
         if (y + needed <= PAGE_H - MARGIN - 20) {   // 20pt reserved for the footer
             return true;
@@ -273,9 +240,7 @@ public final class ServiceHistoryPdf {
         return false;
     }
 
-    // ---- text helpers --------------------------------------------------------
-
-    /** Greedy word wrap; a single word longer than the width is left to overflow rather than cut. */
+    /** makes longer words overflow from screen */
     private List<String> wrap(String value, float maxWidth, float size) {
         Paint measure = new Paint(text);
         measure.setTextSize(size);
