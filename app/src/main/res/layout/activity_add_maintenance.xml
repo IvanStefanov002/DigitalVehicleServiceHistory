@@ -1,17 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  "Ново обслужване" form. Rebuilt on Material 3 components:
-    - the two pickers are exposed-dropdown TextInputLayouts (MaterialAutoCompleteTextView), not bare
-      Spinners; AddMaintenanceActivity tracks the vehicle selection by index itself, since an
-      autocomplete has no getSelectedItemPosition()
-    - text fields are outlined TextInputLayouts with floating labels, so the old all-caps AmLabel
-      TextViews above each field are gone
-    - #edtDate is not typed into — it's focusable="false" and opens a MaterialDatePicker on tap
-
-  Ids consumed by the Activity: amRoot, btnBack, ddVehicle, ddType, edtMileage, edtCost, edtDate,
-  edtNotes, btnSave. Each section header uses a different accent from the categorical palette (see
-  values/arrays.xml) so the form doesn't read as one flat block of cyan.
--->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/amRoot"
@@ -29,7 +16,6 @@
         android:paddingTop="16dp"
         android:paddingBottom="28dp">
 
-        <!-- Header -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -67,7 +53,6 @@
             android:textSize="13sp"
             android:lineSpacingExtra="3dp" />
 
-        <!-- ============ Section 1: vehicle + service type ============ -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -128,7 +113,6 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- ============ Section 2: what was done ============ -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -209,7 +193,6 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- ============ Section 3: optional extras ============ -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -253,8 +236,6 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- Optional: what the service cost. numberDecimal, so the keypad has no minus sign;
-                     the Activity also accepts a comma as the decimal separator. -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
@@ -275,7 +256,6 @@
                         android:autofillHints="" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Read-only: tapping anywhere opens the Material date picker. -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
@@ -321,7 +301,6 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- ============ Section 4: document photo (optional) ============ -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -374,8 +353,6 @@
                     android:textSize="13sp"
                     android:lineSpacingExtra="2dp" />
 
-                <!-- Preview of the picked photo. Hidden until there is one: an empty framed box would
-                     read as a broken image rather than as "nothing attached yet". -->
                 <ImageView
                     android:id="@+id/imgDocPreview"
                     android:layout_width="match_parent"
@@ -403,8 +380,6 @@
                         app:iconSize="18dp"
                         app:cornerRadius="14dp" />
 
-                    <!-- Only shown once something is attached; clears the pick rather than replacing
-                         it, so "I picked the wrong photo" doesn't force a second pick. -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnRemoveDoc"
                         style="@style/Widget.Material3.Button.TextButton"

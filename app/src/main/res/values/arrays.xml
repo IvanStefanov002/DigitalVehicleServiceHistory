@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!--
-      The categorical accent palette as indexable arrays, so adapters can rotate through it by
-      position (index % length) instead of hardcoding a colour per item. Keep both arrays the same
-      length and in the same order — index N of one pairs with index N of the other.
-      Values differ per light/dark via values(-night)/colors.xml.
-    -->
     <array name="accent_fg">
         <item>@color/accent_1_fg</item>
         <item>@color/accent_2_fg</item>

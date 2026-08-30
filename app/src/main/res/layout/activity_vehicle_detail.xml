@@ -1,7 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- #detailRoot is the SwipeRefreshLayout (not the ScrollView) so the window-inset padding applied
-     in onCreate lands on the outer view — that keeps the refresh spinner clear of the status bar.
-     Pull-to-refresh re-runs the photo + maintenance-schedule fetches for this vehicle. -->
 <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -23,7 +20,6 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Header: back button + title -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -68,8 +64,6 @@
                 app:tint="?attr/colorOnSurface"
                 android:contentDescription="@string/edit_vehicle_cd" />
 
-            <!-- Destructive action, so it carries colorError rather than the neutral onSurface
-                 tint of the other header buttons. Guarded by a confirm dialog. -->
             <ImageButton
                 android:id="@+id/btnDelete"
                 android:layout_width="40dp"
@@ -81,7 +75,6 @@
                 android:contentDescription="@string/delete_vehicle_cd" />
         </LinearLayout>
 
-        <!-- Hero photo inside a rounded card, with a loading spinner overlay -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="220dp"
@@ -111,7 +104,6 @@
             </FrameLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Title block -->
         <TextView
             android:id="@+id/txtHeadline"
             android:layout_width="match_parent"
@@ -131,7 +123,6 @@
             android:textSize="15sp"
             android:text="Details" />
 
-        <!-- Specs card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -151,37 +142,28 @@
                 android:paddingTop="4dp"
                 android:paddingBottom="4dp">
 
-                <!-- Type -->
                 <include layout="@layout/item_spec_row" android:id="@+id/rowType" />
                 <View style="@style/Divider.Spec" />
-                <!-- Year -->
+
                 <include layout="@layout/item_spec_row" android:id="@+id/rowYear" />
                 <View style="@style/Divider.Spec" />
-                <!-- Plate -->
+
                 <include layout="@layout/item_spec_row" android:id="@+id/rowPlate" />
                 <View style="@style/Divider.Spec" />
-                <!-- Mileage -->
+
                 <include layout="@layout/item_spec_row" android:id="@+id/rowMileage" />
                 <View style="@style/Divider.Spec" />
-                <!-- Fuel -->
+
                 <include layout="@layout/item_spec_row" android:id="@+id/rowFuel" />
                 <View style="@style/Divider.Spec" />
-                <!-- VIN -->
+
                 <include layout="@layout/item_spec_row" android:id="@+id/rowVin" />
                 <View style="@style/Divider.Spec" />
-                <!-- Color -->
+
                 <include layout="@layout/item_spec_row" android:id="@+id/rowColor" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Documents & validity: the entry point to VehicleComplianceActivity.
-
-             No status pill here on purpose. Two of the three documents are dates the user typed in
-             and the third needs a network call this screen doesn't make, so any single summary badge
-             would either lie or force a second fetch. What it does show is #detailDocWarning, tinted
-             from the status_*_text flavour (it sits on the card background, not on a fill) and driven
-             only by the declared dates that arrived free with the Vehicle — a conservative signal
-             that never claims everything is fine. -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardDocuments"
             android:layout_width="match_parent"
@@ -258,7 +240,6 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Maintenance & repair history card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -283,7 +264,6 @@
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
-                <!-- Service item cards are inflated here at runtime -->
                 <LinearLayout
                     android:id="@+id/maintenanceContainer"
                     android:layout_width="match_parent"
@@ -291,7 +271,6 @@
                     android:orientation="vertical"
                     android:visibility="gone" />
 
-                <!-- Loading spinner for the maintenance fetch -->
                 <ProgressBar
                     android:id="@+id/maintenanceProgress"
                     android:layout_width="wrap_content"
@@ -300,7 +279,6 @@
                     android:layout_marginTop="24dp"
                     android:visibility="gone" />
 
-                <!-- Empty state -->
                 <LinearLayout
                     android:id="@+id/historyEmpty"
                     android:layout_width="match_parent"

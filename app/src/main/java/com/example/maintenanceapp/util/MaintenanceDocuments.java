@@ -21,44 +21,14 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 
-/**
- * Uploads and fetches the document photo attached to a maintenance record.
- *
- * <p><b>This is a third image transport, and it deliberately differs from {@link VehicleImages}.</b>
- * Vehicle photos travel as base64 inside JSON; documents travel as <b>raw bytes</b> with a real
- * {@code Content-Type} and {@code Content-Length}. Reasons, in order of weight:
- * <ul>
- *   <li>base64 is +33% over the wire, on mobile data, for the largest payloads the app moves;</li>
- *   <li>the client would pay double peak memory — the encoded string <em>and</em> the decoded
- *       bitmap;</li>
- *   <li>a raw body can be streamed and gives working {@code ETag}/{@code 304}, where a JSON string
- *       has to be buffered whole on both ends;</li>
- *   <li>if a response is ever cut short, a body measured against {@code Content-Length} fails
- *       detectably, where a truncated JSON body is simply unparseable and indistinguishable from
- *       corruption.</li>
- * </ul>
- *
- * <p><b>The list endpoints never carry document bytes</b> — {@code GET /vehicles/maintenance} and
- * {@code …/history} send only a {@code documentId} per record. A vehicle's history is tens of records,
- * so embedding images would multiply one photo by the whole history in a single response. Bytes are
- * fetched one at a time, here, when the user actually opens one.
- */
 public final class MaintenanceDocuments {
 
     private static final String TAG = "MaintDocs";
 
-    private static final String BASE = "http://92.5.55.85:27778";
-    private static final String DOCUMENT_URL = BASE + "/vehicles/maintenance/document";
-    private static final String UPLOAD_URL = BASE + "/vehicles/maintenance/document";
-
-    /** Cap on the decoded document, in px on the longest side. Enough to read an invoice zoomed in. */
+    private static final String DOCUMENT_URL = Api.MAINTENANCE_DOCUMENT;
+    private static final String UPLOAD_URL = Api.MAINTENANCE_DOCUMENT;
     private static final int MAX_DECODE_DIMEN = 2560;
 
-    /**
-     * Decoded documents keyed by document id. A document is immutable once uploaded (a new photo gets
-     * a new id), so a cache hit can never be stale — which is what makes reopening the viewer instant
-     * and stops a re-fetch on every rotation.
-     */
     private static final LruCache<String, Bitmap> CACHE =
             new LruCache<String, Bitmap>((int) (Runtime.getRuntime().maxMemory() / 8)) {
                 @Override
@@ -71,26 +41,18 @@ public final class MaintenanceDocuments {
 
     private MaintenanceDocuments() { }
 
-    /** Delivered on the main thread. Exactly one of the two methods is called. */
     public interface Callbacks {
         void onLoaded(Bitmap bitmap);
 
         void onFailed();
     }
 
-    /** Cached bitmap for this document, or null. Lets a caller skip the spinner on a re-open. */
     @Nullable
     public static Bitmap cached(String documentId) {
         return documentId == null || documentId.isEmpty() ? null : CACHE.get(documentId);
     }
 
-    /**
-     * Fetches and decodes one document. Serves from the in-memory cache when possible.
-     *
-     * <p>Reads the whole body into a byte array before decoding rather than handing
-     * {@code BitmapFactory} the stream directly: a decode straight off the socket can't be retried,
-     * and a short read would surface as a half-drawn bitmap instead of a clean failure.
-     */
+    /** Fetches and decodes one document */
     public static void load(Context ctx, String documentId, Callbacks cb) {
         if (documentId == null || documentId.trim().isEmpty()) {
             cb.onFailed();
@@ -141,14 +103,6 @@ public final class MaintenanceDocuments {
         });
     }
 
-    /**
-     * Decodes with a bounds pass first, so a multi-megapixel scan is subsampled inside the decoder
-     * rather than briefly existing at full size. Same reasoning as
-     * {@link PickedImages#decodeUpright}.
-     *
-     * <p>No EXIF handling on this side on purpose: the upload path already baked the rotation into the
-     * pixels, and the re-encode dropped the tag. There is nothing here to correct.
-     */
     @Nullable
     private static Bitmap decode(byte[] bytes) {
         try {
@@ -170,16 +124,7 @@ public final class MaintenanceDocuments {
         }
     }
 
-    /**
-     * Uploads a document photo for a record as {@code multipart/form-data}.
-     *
-     * <p><b>A separate request from creating the record, on purpose.</b> The service record is the data
-     * that matters; the photo is a convenience. A multi-megabyte upload from a phone can fail
-     * mid-request for reasons that have nothing to do with the server — a tunnel, a cell handover, the
-     * app being backgrounded. Keeping them separate means such a failure loses only the photo: the
-     * record is already saved, and the user is told the difference rather than being asked to retype a
-     * service they already entered.
-     */
+    /** Uploads a document photo for a record */
     public static void upload(Context ctx, String recordId, byte[] jpeg, Callback callback) {
         RequestBody body = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)

@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Exported PDFs are written to cacheDir/exports and handed to other apps as content:// URIs
-     through FileProvider. A file:// URI would throw FileUriExposedException from API 24 on. -->
 <paths>
     <cache-path name="exports" path="exports/" />
 </paths>

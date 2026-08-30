@@ -7,10 +7,6 @@
     <!-- Service-due reminders. Runtime-requested on Android 13+; auto-granted below that. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- android:debuggable is deliberately NOT set here. The build system marks debug builds
-         debuggable on its own; hardcoding it also shipped it in the release APK, where it lets
-         anyone with adb attach to the running app and read its data directory — including the
-         stored Bearer token. -->
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -22,7 +18,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MaintenanceApp">
 
-        <!-- LoginActivity is now the launcher -->
+        <!-- ACTIVITIES -->
+        <!-- LoginActivity is now the main screen which loads at start-up -->
         <activity android:name=".LoginActivity"
             android:exported="true">
             <intent-filter>
@@ -31,11 +28,9 @@
             </intent-filter>
         </activity>
 
-        <!-- Sign-up, opened from the link at the bottom of LoginActivity -->
         <activity android:name=".RegisterActivity"
             android:exported="false" />
 
-        <!-- MainActivity will be opened after login -->
         <activity android:name=".MainActivity"
             android:exported="true" />
 
@@ -48,7 +43,6 @@
         <activity android:name=".AddMaintenanceActivity"
             android:exported="false"/>
 
-        <!-- Oil advisor, opened from the Поддръжка tab. Read-only: no result contract. -->
         <activity android:name=".OilRecommendationActivity"
             android:exported="false"/>
 
@@ -58,16 +52,16 @@
         <activity android:name=".ShareHistoryActivity"
             android:exported="false"/>
 
-        <!-- Per-vehicle document validity: vignette (fetched) + ГТП/ГО (user-declared) -->
         <activity android:name=".VehicleComplianceActivity"
             android:exported="false"/>
 
-        <!-- Assisted ГТП check: hosts RTA's public vin-check page in a WebView -->
         <activity android:name=".VinCheckActivity"
             android:exported="false"/>
 
-        <!-- Hands exported service-history PDFs to other apps as content:// URIs. Required from
-             API 24 on: sharing a file:// URI throws FileUriExposedException. -->
+        <activity android:name=".DocumentViewerActivity"
+            android:exported="false"
+            android:label="@string/doc_viewer_title"/>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -77,9 +71,6 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
-        <activity android:name=".DocumentViewerActivity"
-            android:exported="false"
-            android:label="@string/doc_viewer_title" />
 
     </application>
 
