@@ -1,3 +1,10 @@
+/*
+ * VehicleDetailActivity.java
+ *
+ *  Created on: XX.08.2026
+ *      Author: ivstefanov
+ */
+
 package com.example.maintenanceapp;
 
 import android.content.ActivityNotFoundException;
@@ -694,27 +701,62 @@ public class VehicleDetailActivity extends AppCompatActivity {
         }
 
         name.setText(orDash(item.name));
-        last.setText(item.lastChangeMileage > 0 ? formatKm(item.lastChangeMileage) : "-");
-        next.setText(item.nextChangeMileage > 0 ? formatKm(item.nextChangeMileage) : "-");
 
-        int interval = item.nextChangeMileage - item.lastChangeMileage;
-        if (item.nextChangeMileage <= 0 || interval <= 0) {
+        boolean tracksKm = item.tracksKm();
+        boolean tracksTime = item.tracksTime();
+
+        if (tracksKm) {
+            last.setText(item.lastChangeMileage > 0 ? formatKm(item.lastChangeMileage) : "-");
+            next.setText(formatKm(item.nextChangeMileage));
+        } else if (tracksTime) {
+            last.setText(orDash(item.lastChangeDate));
+            next.setText(item.nextChangeDate.trim());
+        } else {
+            last.setText(item.lastChangeMileage > 0 ? formatKm(item.lastChangeMileage) : orDash(item.lastChangeDate));
+            next.setText("-");
+        }
+
+        MaintenanceStatus kmStatus = MaintenanceStatus.of(
+                item.lastChangeMileage, item.nextChangeMileage, currentMileage);
+        MaintenanceStatus timeStatus = MaintenanceStatus.ofDate(item.lastChangeDate, item.nextChangeDate);
+        MaintenanceStatus st = MaintenanceStatus.worst(kmStatus, timeStatus);
+
+        if (st == null) {
             progress.setVisibility(View.GONE);
             remaining.setVisibility(View.GONE);
             status.setVisibility(View.GONE);
             return;
         }
 
-        int remainingKm = item.nextChangeMileage - currentMileage;
-        int pct = (int) Math.round(100.0 * (currentMileage - item.lastChangeMileage) / interval);
+        progress.setVisibility(View.VISIBLE);
+        remaining.setVisibility(View.VISIBLE);
+        status.setVisibility(View.VISIBLE);
+
+        boolean timeGoverns = timeStatus != null && (kmStatus == null || timeStatus.ordinal() >= kmStatus.ordinal());
+
+        String remainText;
+        int pct;
+        if (timeGoverns) {
+            Integer days = ComplianceStatus.daysUntil(item.nextChangeDate);
+            int remainingDays = days == null ? 0 : days;
+            remainText = remainingDays < 0
+                    ? getResources().getQuantityString(R.plurals.days_overdue, -remainingDays, -remainingDays)
+                    : getResources().getQuantityString(R.plurals.days_remaining, remainingDays, remainingDays);
+
+            Integer span = ComplianceStatus.daysBetween(item.lastChangeDate, item.nextChangeDate);
+            pct = span != null && span > 0
+                    ? (int) Math.round(100.0 * (span - remainingDays) / span)
+                    : 100;
+        } else {
+            int interval = item.nextChangeMileage - item.lastChangeMileage;
+            int remainingKm = item.nextChangeMileage - currentMileage;
+            remainText = remainingKm <= 0
+                    ? getString(R.string.km_overdue, formatKm(-remainingKm))
+                    : getString(R.string.km_remaining, formatKm(remainingKm));
+            pct = (int) Math.round(100.0 * (currentMileage - item.lastChangeMileage) / interval);
+        }
         pct = Math.max(0, Math.min(100, pct));
         progress.setProgressCompat(pct, false);
-
-        MaintenanceStatus st = MaintenanceStatus.of(
-                item.lastChangeMileage, item.nextChangeMileage, currentMileage);
-        String remainText = remainingKm <= 0
-                ? getString(R.string.km_overdue, formatKm(-remainingKm))
-                : getString(R.string.km_remaining, formatKm(remainingKm));
 
         int color = ContextCompat.getColor(this, st.colorRes);
         progress.setIndicatorColor(color);

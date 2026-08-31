@@ -1,3 +1,10 @@
+/*
+ * ServiceHistoryPdf.java
+ *
+ *  Created on: XX.08.2026
+ *      Author: ivstefanov
+ */
+
 package com.example.maintenanceapp.util;
 
 import android.content.Context;
@@ -195,8 +202,7 @@ public final class ServiceHistoryPdf {
         canvas.drawText(orDash(item.lastChangeDate), MARGIN + COL_DATE, y, text);
         canvas.drawText(ellipsize(item.name, COL_MILEAGE - COL_NAME - 8, 9.5f), MARGIN + COL_NAME, y, text);
         canvas.drawText(km(item.lastChangeMileage), MARGIN + COL_MILEAGE, y, text);
-        canvas.drawText(item.nextChangeMileage > 0 ? km(item.nextChangeMileage) : "-",
-                MARGIN + COL_NEXT, y, text);
+        canvas.drawText(nextDue(item), MARGIN + COL_NEXT, y, text);
         y += 14;
 
         if (!noteLines.isEmpty()) {
@@ -295,6 +301,16 @@ public final class ServiceHistoryPdf {
         String left = a == null ? "" : a.trim();
         String right = b == null ? "" : b.trim();
         return (left + " " + right).trim();
+    }
+
+    private String nextDue(MaintenanceItem item) {
+        if (item.nextChangeMileage > 0) {
+            return km(item.nextChangeMileage);
+        }
+        if (item.nextChangeDate != null && !item.nextChangeDate.trim().isEmpty()) {
+            return item.nextChangeDate.trim();
+        }
+        return "-";
     }
 
     private static String orDash(String value) {
