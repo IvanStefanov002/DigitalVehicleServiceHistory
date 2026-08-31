@@ -1,3 +1,10 @@
+/*
+ * Api.java
+ *
+ *  Created on: XX.08.2026
+ *      Author: ivstefanov
+ */
+
 package com.example.maintenanceapp.util;
 
 /** Every backend URL the app talks to, in one place. */
@@ -28,6 +35,10 @@ public final class Api {
 
     /** maintenance */
     public static final String MAINTENANCE_TYPES = BASE + "/maintenance/types";
+    public static final String MAINTENANCE_TYPE_CREATE = BASE + "/maintenance/types";
+    public static final String MAINTENANCE_TYPE_UPDATE = BASE + "/maintenance/types/update";
+    public static final String MAINTENANCE_TYPE_ARCHIVE = BASE + "/maintenance/types/archive";
+    public static final String MAINTENANCE_TYPE_RESTORE = BASE + "/maintenance/types/restore";
 
     /** OIL */
     public static final String OIL_ENGINES = BASE + "/oil/engines";

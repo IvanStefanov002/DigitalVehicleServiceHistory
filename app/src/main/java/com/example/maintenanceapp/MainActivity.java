@@ -1,3 +1,10 @@
+/*
+ * MainActivity.java
+ *
+ *  Created on: XX.08.2026
+ *      Author: ivstefanov
+ */
+
 package com.example.maintenanceapp;
 
 import android.Manifest;
@@ -14,7 +21,9 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -43,6 +52,7 @@ import com.example.maintenanceapp.util.BiometricLock;
 import com.example.maintenanceapp.util.ComplianceStatus;
 import com.example.maintenanceapp.util.MaintenanceStatus;
 import com.example.maintenanceapp.util.ScreenInsets;
+import com.example.maintenanceapp.util.MaintenanceTypeEditor;
 import com.example.maintenanceapp.util.SwipeRefresh;
 import com.example.maintenanceapp.util.VehicleType;
 import com.example.maintenanceapp.work.ServiceReminders;
@@ -92,6 +102,8 @@ public class MainActivity extends AppCompatActivity {
     private int statusLoadGeneration, docLoadGeneration;
     private MaintenanceTypeAdapter maintTypeAdapter;
     private ProgressBar maintTypesProgress;
+    private View maintSuggestionsCard;
+    private ImageButton btnHiddenTypes;
 
     /** True while the biometric switch is being flipped back in code, so its listener ignores it. */
 
@@ -537,15 +549,27 @@ public class MainActivity extends AppCompatActivity {
         container.addView(view);
 
         RecyclerView recycler = view.findViewById(R.id.typesRecycler);
-        recycler.setLayoutManager(new GridLayoutManager(this, 2));
+        recycler.setLayoutManager(new LinearLayoutManager(this));
         recycler.setItemAnimator(null);
         maintTypeAdapter = new MaintenanceTypeAdapter();
+        maintTypeAdapter.setOnEditListener(type ->
+                MaintenanceTypeEditor.editType(this, type, this::onCatalogChanged));
+        maintTypeAdapter.setOnHideListener(type ->
+                MaintenanceTypeEditor.hideType(this, type, this::onCatalogChanged));
+        maintTypeAdapter.setOnAddListener(() ->
+                MaintenanceTypeEditor.createType(this, this::onCatalogChanged));
         recycler.setAdapter(maintTypeAdapter);
         maintTypesProgress = view.findViewById( R.id.typesProgress );
 
+        maintSuggestionsCard = view.findViewById( R.id.cardSuggestions );
+        view.findViewById( R.id.sgHeader ).setOnClickListener(v -> showSuggestions());
+        btnHiddenTypes = view.findViewById( R.id.btnHiddenTypes );
+        btnHiddenTypes.setOnClickListener(v -> showHiddenTypes());
+        refreshHiddenTypes();
+
         if ( !maintenanceTypes.isEmpty() ) {
             maintTypesProgress.setVisibility( View.GONE );
-            maintTypeAdapter.setTypes( maintenanceTypes );
+            maintTypeAdapter.setTypes( visibleTypes() );
         } else if ( typesRequestInFlight ) {
             maintTypesProgress.setVisibility( View.VISIBLE );
         } else {
@@ -596,7 +620,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void fetchMaintenanceTypes( int attempt ) {
-        Request request = new Request.Builder().url( Api.MAINTENANCE_TYPES ).get().build();
+        HttpUrl url = HttpUrl.parse( Api.MAINTENANCE_TYPES );
+        if ( url != null ) {
+            url = url.newBuilder().addQueryParameter( "includeArchived", "1" ).build();
+        }
+        Request request = new Request.Builder()
+                .url( url == null ? Api.MAINTENANCE_TYPES : url.toString() )
+                .get().build();
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure( Call call, IOException e ) {
@@ -651,8 +681,130 @@ public class MainActivity extends AppCompatActivity {
             if (maintTypesProgress != null) {
                 maintTypesProgress.setVisibility(View.GONE);
             }
-            maintTypeAdapter.setTypes(maintenanceTypes);
+            maintTypeAdapter.setTypes(visibleTypes());
+            refreshSuggestions();
+            refreshHiddenTypes();
         });
+    }
+
+    private List<MaintenanceType> visibleTypes() {
+        List<MaintenanceType> visible = new ArrayList<>();
+        for (MaintenanceType type : maintenanceTypes) {
+            if (!type.archived) {
+                visible.add(type);
+            }
+        }
+        return visible;
+    }
+
+    private List<MaintenanceType> hiddenTypes() {
+        List<MaintenanceType> hidden = new ArrayList<>();
+        for (MaintenanceType type : maintenanceTypes) {
+            if (type.archived) {
+                hidden.add(type);
+            }
+        }
+        return hidden;
+    }
+
+    private void refreshHiddenTypes() {
+        if (btnHiddenTypes == null) {
+            return;
+        }
+        int count = hiddenTypes().size();
+        btnHiddenTypes.setVisibility(count > 0 ? View.VISIBLE : View.GONE);
+        btnHiddenTypes.setContentDescription(getString(R.string.mt_hidden_count, count));
+        androidx.appcompat.widget.TooltipCompat.setTooltipText(btnHiddenTypes,
+                getString(R.string.mt_hidden_count, count));
+    }
+
+    private void showHiddenTypes() {
+        List<MaintenanceType> hidden = hiddenTypes();
+        if (hidden.isEmpty()) {
+            return;
+        }
+        String[] labels = new String[hidden.size()];
+        for (int i = 0; i < hidden.size(); i++) {
+            labels[i] = hidden.get(i).name;
+        }
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.mt_hidden_title)
+                .setItems(labels, (d, which) ->
+                        MaintenanceTypeEditor.restoreType(this, hidden.get(which), this::onCatalogChanged))
+                .setNegativeButton(R.string.action_cancel, null)
+                .show();
+    }
+
+    private void onCatalogChanged() {
+        maintenanceTypes.clear();
+        typesRequestInFlight = true;
+        if (maintTypesProgress != null) {
+            maintTypesProgress.setVisibility(View.VISIBLE);
+        }
+        fetchMaintenanceTypes(1);
+    }
+
+    private List<MaintenanceType> suggestedTypes() {
+        List<MaintenanceType> suggested = new ArrayList<>();
+        for (MaintenanceType type : maintenanceTypes) {
+            if (type.suggested && !type.archived
+                    && (type.suggestedIntervalKm > 0 || type.suggestedIntervalMonths > 0)) {
+                suggested.add(type);
+            }
+        }
+        return suggested;
+    }
+
+    private void refreshSuggestions() {
+        if (maintSuggestionsCard == null) {
+            return;
+        }
+        maintSuggestionsCard.setVisibility(suggestedTypes().isEmpty() ? View.GONE : View.VISIBLE);
+    }
+
+    private void showSuggestions() {
+        List<MaintenanceType> suggested = suggestedTypes();
+        if (suggested.isEmpty()) {
+            return;
+        }
+
+        View content = getLayoutInflater().inflate(R.layout.dialog_suggested_intervals, null, false);
+        LinearLayout list = content.findViewById(R.id.sgList);
+
+        androidx.appcompat.app.AlertDialog dialog = new com.google.android.material.dialog
+                .MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.sg_title)
+                .setView(content)
+                .setPositiveButton(R.string.sg_close, null)
+                .create();
+
+        for (MaintenanceType type : suggested) {
+            View row = getLayoutInflater().inflate(R.layout.item_suggested_interval, list, false);
+            TextView name = row.findViewById(R.id.txtSgName);
+            TextView interval = row.findViewById(R.id.txtSgInterval);
+            TextView yours = row.findViewById(R.id.txtSgYours);
+            View apply = row.findViewById(R.id.btnSgApply);
+
+            name.setText(type.name);
+            interval.setText(MaintenanceTypeEditor.intervalLabel(getResources(),
+                    type.suggestedIntervalKm, type.suggestedIntervalMonths));
+
+            boolean differs = type.overridden();
+            yours.setVisibility(differs ? View.VISIBLE : View.GONE);
+            apply.setVisibility(differs ? View.VISIBLE : View.GONE);
+            if (differs) {
+                yours.setText(getString(R.string.sg_yours,
+                        MaintenanceTypeEditor.intervalLabel(getResources(),
+                                type.defaultIntervalKm, type.defaultIntervalMonths)));
+                apply.setOnClickListener(v -> {
+                    dialog.dismiss();
+                    MaintenanceTypeEditor.applySuggestion(this, type, this::onCatalogChanged);
+                });
+            }
+            list.addView(row);
+        }
+
+        dialog.show();
     }
 
     private List<MaintenanceType> parseTypes(String body) throws JSONException {
@@ -672,9 +824,17 @@ public class MainActivity extends AppCompatActivity {
                 // take parameters from object
                 String name = o.optString( "name", "" );
                 if ( !name.isEmpty() ) {
-                    list.add( new MaintenanceType(name,
+                    MaintenanceType type = new MaintenanceType(name,
                             o.optInt( "defaultIntervalKm", 0 ),
-                            o.optString( "description", "" ) ) );
+                            o.optString( "description", "" ) );
+                    type.id = o.isNull("id") ? "" : o.optString("id", "");
+                    type.defaultIntervalMonths = o.optInt( "defaultIntervalMonths", 0 );
+                    type.suggestedIntervalKm = o.optInt( "suggestedIntervalKm", type.defaultIntervalKm );
+                    type.suggestedIntervalMonths = o.optInt( "suggestedIntervalMonths", type.defaultIntervalMonths );
+                    type.suggested = o.optBoolean( "suggested", false );
+                    type.custom = o.optBoolean( "custom", false );
+                    type.archived = o.optBoolean( "archived", o.optBoolean( "hidden", false ) );
+                    list.add( type );
                 }
             }
         }
@@ -686,14 +846,13 @@ public class MainActivity extends AppCompatActivity {
     /** Placeholder catalog shown until GET /maintenance/types exists; intervals are indicative. */
     private List<MaintenanceType> fallbackTypes() {
         List<MaintenanceType> list = new ArrayList<>();
-        list.add(new MaintenanceType("Смяна на масло и филтър", 15000));
-        list.add(new MaintenanceType("Въздушен и кабинен филтър", 30000));
-        list.add(new MaintenanceType("Спирачни накладки", 40000));
-        list.add(new MaintenanceType("Спирачни дискове", 80000));
-        list.add(new MaintenanceType("Ангренажен ремък", 120000,
-                "Скъсване на ремъка може да доведе до тежка повреда на двигателя. "
-                        + "Спазвайте интервала стриктно и проверявайте състоянието му."));
-        list.add(new MaintenanceType("Гуми", 50000));
+        list.add(new MaintenanceType("Смяна на масло и филтър", 0));
+        list.add(new MaintenanceType("Въздушен и кабинен филтър", 0));
+        list.add(new MaintenanceType("Спирачни накладки", 0));
+        list.add(new MaintenanceType("Спирачни дискове", 0));
+        list.add(new MaintenanceType("Ангренажен ремък", 0));
+        list.add(new MaintenanceType("Охладителна течност", 0));
+        list.add(new MaintenanceType("Гуми", 0));
         return list;
     }
 
@@ -701,6 +860,8 @@ public class MainActivity extends AppCompatActivity {
         maintTypeAdapter = null;
         maintTypesProgress = null;
         maintSwipe = null;
+        maintSuggestionsCard = null;
+        btnHiddenTypes = null;
     }
 
     private void clearProfileRefs() {
