@@ -1,3 +1,10 @@
+/*
+ * ServiceReminderWorker.java
+ *
+ *  Created on: XX.08.2026
+ *      Author: ivstefanov
+ */
+
 package com.example.maintenanceapp.work;
 
 import android.content.Context;
@@ -33,42 +40,15 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-/**
- * Periodic background check for vehicles whose service is due or overdue, posting a notification
- * when there are any. Scheduled by {@link ServiceReminders}.
- *
- * <p>This deliberately re-derives status from the same pieces the UI uses — {@code GET /vehicles},
- * {@code GET /vehicles/maintenance?id=}, {@link MaintenanceItem#listFromJson} and
- * {@link MaintenanceStatus#worst} — so a badge on the Автопарк tab and a notification can never
- * disagree about what's overdue. <b>No new endpoint is needed.</b>
- *
- * <p>It also checks <b>document validity</b> (винетка / ГТП / ГО) and notifies about that
- * separately — own channel, own notification id, own suppression signature. The two are kept apart
- * end to end because "your oil is due" and "your vignette expired" differ in both urgency and
- * remedy, and because a change in one must not reset the other's 7-day quiet period.
- *
- * <p>Requests are made <b>synchronously</b> ({@code execute()}, not {@code enqueue()}): a Worker
- * already runs off the main thread, and the callback style the Activities use would let
- * {@code doWork()} return before the responses landed.
- */
+/** Periodic background check for vehicles whose service is due or overdue, posting a notification when there are any. */
 public class ServiceReminderWorker extends Worker {
 
     private static final String TAG = "ServiceReminders";
-
-
-    /** Re-nudge about an unchanged backlog after this long, so ignoring it once isn't permanent. */
     private static final long REMIND_AGAIN_MS = TimeUnit.DAYS.toMillis(7);
 
     private static final String PREFS = "reminders";
     private static final String KEY_SIGNATURE = "last_signature";
     private static final String KEY_NOTIFIED_AT = "last_notified_at";
-
-    /**
-     * Documents get their <b>own</b> signature and timestamp, not a share of the service ones.
-     * Folding both into one signature would mean a vignette changing state resets the suppression
-     * clock for service reminders too — so the user would be re-notified about an oil change they
-     * had already dismissed, because something unrelated happened to their vignette.
-     */
     private static final String KEY_DOC_SIGNATURE = "last_doc_signature";
     private static final String KEY_DOC_NOTIFIED_AT = "last_doc_notified_at";
 
@@ -81,8 +61,6 @@ public class ServiceReminderWorker extends Worker {
     public Result doWork() {
         Context ctx = getApplicationContext();
 
-        // Logged out (or never logged in): nothing to report, and every request would be
-        // unauthenticated anyway. Not a failure — just skip this run.
         if (ApiClient.token(ctx).isEmpty()) {
             return Result.success();
         }
@@ -90,8 +68,7 @@ public class ServiceReminderWorker extends Worker {
         OkHttpClient client = ApiClient.get(ctx);
         List<Vehicle> vehicles = fetchVehicles(client);
         if (vehicles == null) {
-            // Couldn't reach the server; let WorkManager back off and try again rather than
-            // treating "unknown" as "nothing due".
+            // Couldn't reach the server;
             return Result.retry();
         }
 
@@ -102,8 +79,7 @@ public class ServiceReminderWorker extends Worker {
         List<String> docOverdue = new ArrayList<>();
         List<String> docDue = new ArrayList<>();
         List<String> docSignature = new ArrayList<>();
-        // Remembered so a single-vehicle notification can deep-link straight to its Документи
-        // screen. Only meaningful when exactly one vehicle ends up flagged.
+
         Vehicle onlyDocVehicle = null;
 
         for (Vehicle v : vehicles) {
@@ -111,14 +87,6 @@ public class ServiceReminderWorker extends Worker {
                 continue;
             }
 
-            // ---- documents ----
-            // The declared ГТП/ГО dates came with GET /vehicles, so they cost nothing. Only the
-            // vignette needs a call, and a failed one leaves the declared verdict standing rather
-            // than dropping the vehicle: "we couldn't check the vignette" must not erase "your ГТП
-            // expired last week".
-            // An exempt type (motorcycle) is not asked about at all — the authority's correct "no
-            // vignette" answer would otherwise become a nightly notification about a document the
-            // owner is not required to hold. See VehicleType.requiresVignette().
             VignetteInfo vignette = VehicleType.of(v).requiresVignette()
                     ? fetchVignette(client, v.id)
                     : null;
@@ -138,7 +106,7 @@ public class ServiceReminderWorker extends Worker {
             // ---- service ----
             List<MaintenanceItem> items = fetchMaintenance(client, v.id);
             if (items == null) {
-                continue;   // this vehicle is unreachable; don't let it hide the others
+                continue;   // this vehicle is unreachable;
             }
             MaintenanceStatus status = MaintenanceStatus.worst(items, v.mileage);
             if (status == MaintenanceStatus.OVERDUE) {
@@ -157,11 +125,6 @@ public class ServiceReminderWorker extends Worker {
         return Result.success();
     }
 
-    /**
-     * Sorted so the signature depends on which vehicles are in which state, not on the order the
-     * server happened to list them in. {@code TextUtils.join}, not {@code String.join} — that one is
-     * API 26 and minSdk here is 24.
-     */
     private static String signatureOf(List<String> parts) {
         Collections.sort(parts);
         return TextUtils.join(",", parts);
@@ -201,11 +164,6 @@ public class ServiceReminderWorker extends Worker {
         }
     }
 
-    /**
-     * Suppresses repeats: the same set of vehicles in the same states doesn't notify again until
-     * {@link #REMIND_AGAIN_MS} has passed. Any change — a new overdue car, or one going from due
-     * to overdue — notifies straight away.
-     */
     private boolean shouldNotify(Context ctx, String signature, String sigKey, String atKey) {
         SharedPreferences prefs = prefs(ctx);
         if (!signature.equals(prefs.getString(sigKey, ""))) {
@@ -214,7 +172,6 @@ public class ServiceReminderWorker extends Worker {
         return System.currentTimeMillis() - prefs.getLong(atKey, 0L) >= REMIND_AGAIN_MS;
     }
 
-    /** @return the user's vehicles, or null if the server couldn't be reached / parsed. */
     private List<Vehicle> fetchVehicles(OkHttpClient client) {
         Request request = new Request.Builder().url(Api.VEHICLES).get().build();
         try (Response response = client.newCall(request).execute()) {
@@ -239,7 +196,6 @@ public class ServiceReminderWorker extends Worker {
         }
     }
 
-    /** @return one vehicle's maintenance items, or null if the request failed. */
     private List<MaintenanceItem> fetchMaintenance(OkHttpClient client, String id) {
         HttpUrl url = HttpUrl.parse(Api.MAINTENANCE).newBuilder()
                 .addQueryParameter("id", id)
@@ -257,14 +213,6 @@ public class ServiceReminderWorker extends Worker {
         }
     }
 
-    /**
-     * One vehicle's vignette, or {@code null} when it could not be checked.
-     *
-     * <p>{@code null} is <em>unknown</em>, and {@link ComplianceStatus#ofVignette} maps it to no
-     * status at all rather than to OVERDUE. A non-2xx here means our backend could not reach the
-     * toll authority and had nothing cached — reporting that as "no vignette" would push a
-     * notification claiming the user was driving illegally because a third-party service was down.
-     */
     private VignetteInfo fetchVignette(OkHttpClient client, String id) {
         HttpUrl url = HttpUrl.parse(Api.VEHICLE_VIGNETTE).newBuilder()
                 .addQueryParameter("id", id)
