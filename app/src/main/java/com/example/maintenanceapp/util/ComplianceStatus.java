@@ -1,3 +1,10 @@
+/*
+ * ComplianceStatus.java
+ *
+ *  Created on: XX.08.2026
+ *      Author: ivstefanov
+ */
+
 package com.example.maintenanceapp.util;
 
 import androidx.annotation.Nullable;
@@ -52,6 +59,16 @@ public enum ComplianceStatus {
             return null;
         }
         long diffMs = expiry.getTime() - todayMidnight().getTimeInMillis();
+        return (int) Math.round(diffMs / (double) (24 * 60 * 60 * 1000));
+    }
+
+    public static Integer daysBetween(@Nullable String fromIso, @Nullable String toIso) {
+        Date from = parse(fromIso);
+        Date to = parse(toIso);
+        if (from == null || to == null) {
+            return null;
+        }
+        long diffMs = to.getTime() - from.getTime();
         return (int) Math.round(diffMs / (double) (24 * 60 * 60 * 1000));
     }
 
