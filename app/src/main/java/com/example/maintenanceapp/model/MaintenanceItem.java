@@ -1,3 +1,10 @@
+/*
+ * MaintenanceItem.java
+ *
+ *  Created on: XX.08.2026
+ *      Author: ivstefanov
+ */
+
 package com.example.maintenanceapp.model;
 
 import org.json.JSONArray;
@@ -17,9 +24,18 @@ public class MaintenanceItem implements Serializable {
     public int lastChangeMileage;   // km at last service (0 if unknown)
     public int nextChangeMileage;   // km recommended for next service (0 if unknown)
     public String lastChangeDate;   // optional, free text (may be null/empty)
+    public String nextChangeDate = "";
     public String notes;            // optional (may be null/empty)
     public double cost = -1;
     public String documentId = "";
+
+    public boolean tracksKm() {
+        return nextChangeMileage > 0 && nextChangeMileage > lastChangeMileage;
+    }
+
+    public boolean tracksTime() {
+        return nextChangeDate != null && !nextChangeDate.trim().isEmpty();
+    }
 
     public static List<MaintenanceItem> listFromJson(String body) throws JSONException {
         List<MaintenanceItem> list = new ArrayList<>();
@@ -36,6 +52,7 @@ public class MaintenanceItem implements Serializable {
                 m.lastChangeMileage = o.optInt("lastChangeMileage", 0);
                 m.nextChangeMileage = o.optInt("nextChangeMileage", 0);
                 m.lastChangeDate = o.optString("lastChangeDate", "");
+                m.nextChangeDate = o.isNull("nextChangeDate") ? "" : o.optString("nextChangeDate", "");
                 m.notes = o.optString("notes", "");
                 // -1 for both "absent" and "null": the server omits the key on records with no
                 // recorded price, and optDouble's fallback doesn't cover a JSON null.

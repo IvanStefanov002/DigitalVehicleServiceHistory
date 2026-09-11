@@ -1,3 +1,10 @@
+/*
+ * VehicleType.java
+ *
+ *  Created on: XX.08.2026
+ *      Author: ivstefanov
+ */
+
 package com.example.maintenanceapp.util;
 
 import android.content.Context;

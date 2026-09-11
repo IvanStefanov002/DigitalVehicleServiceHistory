@@ -48,14 +48,29 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:minLines="2"
-                    android:maxLines="3"
+                    android:maxLines="2"
                     android:ellipsize="end"
                     android:lineSpacingExtra="1dp"
                     android:textColor="?attr/colorOnSurface"
                     android:textSize="15sp"
                     android:textStyle="bold"
                     tools:text="Смяна на масло и филтър" />
+
+                <TextView
+                    android:id="@+id/txtTypeCustom"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:paddingStart="6dp"
+                    android:paddingEnd="6dp"
+                    android:paddingTop="1dp"
+                    android:paddingBottom="1dp"
+                    android:background="@drawable/bg_icon_chip"
+                    android:backgroundTint="?attr/colorSecondaryContainer"
+                    android:text="@string/mt_custom_badge"
+                    android:textColor="?attr/colorOnSecondaryContainer"
+                    android:textSize="11sp"
+                    android:visibility="gone" />
 
                 <ImageView
                     android:id="@+id/imgChevron"
@@ -94,6 +109,60 @@
                     android:textSize="16sp"
                     android:textStyle="bold"
                     tools:text="На всеки 15 000 км" />
+
+                <TextView
+                    android:id="@+id/txtTypeSuggestion"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="12sp"
+                    android:visibility="gone"
+                    tools:text="Препоръчано: 15 000 км" />
+
+                <LinearLayout
+                    android:id="@+id/typeActions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginStart="-6dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnEditType"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minWidth="0dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        app:icon="@drawable/ic_edit"
+                        app:iconSize="16dp"
+                        app:iconPadding="4dp"
+                        android:text="@string/mt_edit"
+                        android:textSize="13sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnHideType"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minWidth="0dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        app:icon="@drawable/ic_visibility_off"
+                        app:iconSize="16dp"
+                        app:iconPadding="4dp"
+                        app:iconTint="?attr/colorOnSurfaceVariant"
+                        android:text="@string/mt_hide"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textSize="13sp" />
+                </LinearLayout>
             </LinearLayout>
 
             <LinearLayout

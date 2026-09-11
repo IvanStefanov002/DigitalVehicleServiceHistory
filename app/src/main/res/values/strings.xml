@@ -83,7 +83,6 @@
 
     <!-- Maintenance tab -->
     <string name="maint_title">Поддръжка</string>
-    <string name="maint_intro">Добавете запис за извършено обслужване. Историята за всеки автомобил се вижда в неговите детайли.</string>
     <string name="maint_add">Добави</string>
     <string name="maint_no_vehicles">Първо добавете автомобил от таб „Автопарк“.</string>
     <string name="am_title">Ново обслужване</string>
@@ -424,4 +423,59 @@
     <string name="oil_products_label">Подходящи масла</string>
     <string name="oil_alt_label">Алтернативен вискозитет</string>
     <string name="oil_footnote">Препоръката е ориентировъчна и се извежда от кода на двигателя. Задължаващото изискване е одобрението на производителя (напр. VW 507 00, MB 229.51, BMW LL-04) — то е изписано в инструкцията за експлоатация на автомобила. Проверете го, преди да купите масло.</string>
+
+    <!-- Maintenance type editor -->
+    <string name="mt_new">Нов вид</string>
+    <string name="mt_new_card">Нов вид обслужване</string>
+    <string name="mt_new_card_hint">Задайте свой интервал</string>
+    <string name="mt_edit">Промени</string>
+    <string name="mt_create_title">Нов вид обслужване</string>
+    <string name="mt_edit_title">Интервал за обслужване</string>
+    <string name="mt_name">Наименование</string>
+    <string name="mt_name_builtin">Вградените видове не могат да бъдат преименувани</string>
+    <string name="mt_name_required">Въведете наименование</string>
+    <string name="mt_name_taken">Вече има вид обслужване с това име</string>
+    <string name="mt_km">По пробег</string>
+    <string name="mt_months">По време</string>
+    <string name="mt_months_suffix">мес.</string>
+    <string name="mt_interval_invalid">Невалидна стойност</string>
+    <string name="mt_interval_required">Попълнете поне един от двата интервала</string>
+    <string name="mt_interval_both">%1$s или %2$s</string>
+    <string name="mt_interval_hint">Ако попълните и двете, важи което настъпи първо.</string>
+    <string name="mt_suggested">Препоръчано: %s</string>
+    <string name="mt_custom_badge">Ваш вид</string>
+    <string name="mt_hide">Скрий</string>
+    <string name="mt_hide_title">Да скрием ли този вид?</string>
+    <string name="mt_hide_message">„%s“ ще изчезне от списъка и от избора при добавяне на обслужване. Вече записаната история се запазва, а видът може да бъде върнат от „Скрити видове“.</string>
+    <string name="mt_hidden">Видът е скрит</string>
+    <string name="mt_restored">Видът е върнат</string>
+    <string name="mt_hidden_title">Скрити видове</string>
+    <string name="mt_hidden_count">Скрити видове (%d)</string>
+    <string name="mt_created">Видът е добавен</string>
+    <string name="mt_updated">Интервалът е записан</string>
+    <string name="mt_error">Промяната не беше записана</string>
+    <plurals name="months_interval">
+        <item quantity="one">%d месец</item>
+        <item quantity="other">%d месеца</item>
+    </plurals>
+
+    <!-- Suggested intervals card -->
+    <string name="sg_title">Препоръчани интервали</string>
+    <string name="sg_teaser">На колко се сменят основните консумативи</string>
+    <string name="sg_close">Затвори</string>
+    <string name="sg_footnote">Ориентировъчни стойности за леки автомобили. Обвързващ е интервалът от сервизната книжка на вашия автомобил.</string>
+    <string name="sg_yours">Вашият интервал: %s</string>
+    <string name="sg_apply">Използвай</string>
+
+    <!-- Time-based service records -->
+    <plurals name="days_remaining">
+        <item quantity="one">Остава %d ден</item>
+        <item quantity="other">Остават %d дни</item>
+    </plurals>
+    <plurals name="days_overdue">
+        <item quantity="one">Просрочено с %d ден</item>
+        <item quantity="other">Просрочено с %d дни</item>
+    </plurals>
+    <string name="am_date_required">Този вид се следи по време — изберете дата</string>
+    <string name="am_type_time_helper">Следи се по време: %s</string>
 </resources>

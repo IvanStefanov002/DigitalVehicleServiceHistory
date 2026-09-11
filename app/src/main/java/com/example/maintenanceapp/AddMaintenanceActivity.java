@@ -1,3 +1,10 @@
+/*
+ * AddMaintenanceActivity.java
+ *
+ *  Created on: XX.08.2026
+ *      Author: ivstefanov
+ */
+
 package com.example.maintenanceapp;
 
 import android.graphics.Bitmap;
@@ -15,15 +22,18 @@ import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.maintenanceapp.model.MaintenanceType;
 import com.example.maintenanceapp.model.Vehicle;
 import com.example.maintenanceapp.util.Api;
 import com.example.maintenanceapp.util.ApiClient;
 import com.example.maintenanceapp.util.MaintenanceDocuments;
+import com.example.maintenanceapp.util.MaintenanceTypeEditor;
 import com.example.maintenanceapp.util.PickedImages;
 import com.example.maintenanceapp.util.ScreenInsets;
 import com.google.android.material.datepicker.MaterialDatePicker;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.MaterialAutoCompleteTextView;
+import com.google.android.material.textfield.TextInputLayout;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -62,6 +72,7 @@ public class AddMaintenanceActivity extends AppCompatActivity {
             "Спирачни дискове",
             "Спирачни накладки",
             "Ангренажен ремък",
+            "Охладителна течност",
             "Гуми"
     };
 
@@ -72,6 +83,9 @@ public class AddMaintenanceActivity extends AppCompatActivity {
     private MaterialAutoCompleteTextView ddVehicle, ddType;
 
     private int selectedVehicleIndex = -1;
+    private final List<MaintenanceType> types = new ArrayList<>();
+    private int selectedTypeIndex = -1;
+    private TextInputLayout tilType, tilDate;
     private EditText edtMileage, edtCost, edtDate, edtNotes;
     private Button btnSave;
 
@@ -106,6 +120,8 @@ public class AddMaintenanceActivity extends AppCompatActivity {
         ImageButton btnBack = findViewById(R.id.btnBack);
         ddVehicle = findViewById(R.id.ddVehicle);
         ddType = findViewById(R.id.ddType);
+        tilType = findViewById(R.id.tilType);
+        tilDate = findViewById(R.id.tilDate);
         edtMileage = findViewById(R.id.edtMileage);
         edtCost = findViewById(R.id.edtCost);
         edtDate = findViewById(R.id.edtDate);
@@ -133,12 +149,17 @@ public class AddMaintenanceActivity extends AppCompatActivity {
             selectVehicle(0);   // preselect so the form works without opening the dropdown
         }
 
+        ddType.setOnItemClickListener((parent, view, pos, id) -> selectType(pos));
+
         // fallback now, refreshed from the server when it responds.
-        setTypeItems( FALLBACK_TYPES );
+        setTypeItems( fallbackTypes() );
         fetchTypes();
 
         // tapping it opens the Material date picker.
-        edtDate.setOnClickListener(v -> showDatePicker());
+        edtDate.setOnClickListener(v -> {
+            tilDate.setError(null);
+            showDatePicker();
+        });
 
         btnSave.setOnClickListener(v -> save());
 
@@ -166,18 +187,63 @@ public class AddMaintenanceActivity extends AppCompatActivity {
         edtMileage.setText(String.valueOf(vehicles.get(pos).mileage));
     }
 
-    private void setTypeItems(String[] names) {
-        String current = ddType.getText() == null ? "" : ddType.getText().toString();
+    private static List<MaintenanceType> fallbackTypes() {
+        List<MaintenanceType> list = new ArrayList<>();
+        for (String name : FALLBACK_TYPES) {
+            list.add(new MaintenanceType(name, 0));
+        }
+        return list;
+    }
+
+    private void setTypeItems(List<MaintenanceType> newTypes) {
+        String current = selectedTypeIndex >= 0 && selectedTypeIndex < types.size()
+                ? types.get(selectedTypeIndex).name
+                : "";
+
+        types.clear();
+        types.addAll(newTypes);
+
+        String[] names = new String[types.size()];
+        for (int i = 0; i < types.size(); i++) {
+            names[i] = types.get(i).name;
+        }
         ddType.setSimpleItems(names);
 
-        String keep = names.length > 0 ? names[0] : "";
-        for (String n : names) {
-            if (n.equals(current)) {
-                keep = current;
+        int keep = types.isEmpty() ? -1 : 0;
+        for (int i = 0; i < types.size(); i++) {
+            if (types.get(i).name.equals(current)) {
+                keep = i;
                 break;
             }
         }
-        ddType.setText(keep, false);
+        selectType(keep);
+    }
+
+    private void selectType(int pos) {
+        selectedTypeIndex = pos;
+        if (pos < 0 || pos >= types.size()) {
+            ddType.setText("", false);
+            tilType.setHelperTextEnabled(false);
+            return;
+        }
+        MaintenanceType type = types.get(pos);
+        ddType.setText(type.name, false);
+
+        boolean timed = type.tracksTime();
+        tilType.setHelperTextEnabled(timed);
+        tilType.setHelperText(timed
+                ? getString(R.string.am_type_time_helper, MaintenanceTypeEditor.intervalLabel(
+                        getResources(), type.defaultIntervalKm, type.defaultIntervalMonths))
+                : null);
+        if (!timed) {
+            tilDate.setError(null);
+        }
+    }
+
+    private MaintenanceType selectedType() {
+        return selectedTypeIndex >= 0 && selectedTypeIndex < types.size()
+                ? types.get(selectedTypeIndex)
+                : null;
     }
 
     private void showDatePicker() {
@@ -203,7 +269,7 @@ public class AddMaintenanceActivity extends AppCompatActivity {
 
             @Override
             public void onResponse(Call call, Response response) {
-                List<String> names = new ArrayList<>();
+                List<MaintenanceType> parsed = new ArrayList<>();
                 try (Response r = response) {
                     if (r.isSuccessful() && r.body() != null) {
                         JSONArray arr = new JSONObject(r.body().string()).optJSONArray("types");
@@ -212,15 +278,20 @@ public class AddMaintenanceActivity extends AppCompatActivity {
                                 JSONObject o = arr.optJSONObject(i);
                                 if (o == null) continue;
                                 String name = o.optString("name", "");
-                                if (!name.isEmpty()) names.add(name);
+                                if (name.isEmpty()) continue;
+                                MaintenanceType type = new MaintenanceType(name,
+                                        o.optInt("defaultIntervalKm", 0));
+                                type.id = o.isNull("id") ? "" : o.optString("id", "");
+                                type.defaultIntervalMonths = o.optInt("defaultIntervalMonths", 0);
+                                parsed.add(type);
                             }
                         }
                     }
                 } catch (IOException | JSONException e) {
                     Log.e("Maintenance", "types parse failed; using fallback", e);
                 }
-                if (!names.isEmpty()) {
-                    runOnUiThread(() -> setTypeItems(names.toArray(new String[0])));
+                if (!parsed.isEmpty()) {
+                    runOnUiThread(() -> setTypeItems(parsed));
                 }
             }
         });
@@ -286,14 +357,26 @@ public class AddMaintenanceActivity extends AppCompatActivity {
             }
         }
 
-        String type = ddType.getText() == null ? "" : ddType.getText().toString().trim();
+        MaintenanceType type = selectedType();
+        String typeName = type != null
+                ? type.name
+                : (ddType.getText() == null ? "" : ddType.getText().toString().trim());
         String date = edtDate.getText().toString().trim();
         String notes = edtNotes.getText().toString().trim();
+
+        if (type != null && type.tracksTime() && date.isEmpty()) {
+            tilDate.setError(getString(R.string.am_date_required));
+            edtDate.requestFocus();
+            return;
+        }
 
         JSONObject json = new JSONObject();
         try {
             json.put("vehicleId", vehicle.id);
-            json.put("type", type);
+            json.put("type", typeName);
+            if (type != null && type.id != null && !type.id.isEmpty()) {
+                json.put("typeId", type.id);
+            }
             json.put("mileage", mileage);
             if (cost >= 0) json.put("cost", cost);
             if (!date.isEmpty()) json.put("date", date);
